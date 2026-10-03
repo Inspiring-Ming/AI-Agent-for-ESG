@@ -1,0 +1,172 @@
+{
+  "mechanism": "http",
+  "summary": {
+    "goals": 5,
+    "distinct_action_sequences": 3,
+    "distinct_occurrence_counts": [
+      2,
+      6,
+      8
+    ],
+    "distinct_type_sets": 3,
+    "satisfied": 4
+  },
+  "goals": [
+    {
+      "id": "G1",
+      "description": "named metric requiring a calculation model, with explanation",
+      "status": "success",
+      "actions": [
+        "discover",
+        "select",
+        "ground",
+        "compute",
+        "explain",
+        "finish"
+      ],
+      "occurrences": 8,
+      "types_realized": [
+        "T3",
+        "T4",
+        "T5"
+      ],
+      "occurrences_by_type": {
+        "T3": 2,
+        "T4": 4,
+        "T5": 2
+      },
+      "responsibilities": [
+        "L3",
+        "L4",
+        "L5",
+        "L6"
+      ],
+      "value": "0.0710",
+      "measurement_method": "calculation_model",
+      "explained": true,
+      "rationale": "4 candidates; selected 'GHGEmissionIntensity'"
+    },
+    {
+      "id": "G2",
+      "description": "same metric, result only (no explanation requested)",
+      "status": "success",
+      "actions": [
+        "discover",
+        "select",
+        "ground",
+        "compute",
+        "finish"
+      ],
+      "occurrences": 6,
+      "types_realized": [
+        "T4",
+        "T5"
+      ],
+      "occurrences_by_type": {
+        "T4": 4,
+        "T5": 2
+      },
+      "responsibilities": [
+        "L3",
+        "L5",
+        "L6"
+      ],
+      "value": "0.0710",
+      "measurement_method": "calculation_model",
+      "explained": false,
+      "rationale": "4 candidates; selected 'GHGEmissionIntensity'"
+    },
+    {
+      "id": "G3",
+      "description": "directly measured metric, with explanation",
+      "status": "success",
+      "actions": [
+        "discover",
+        "select",
+        "ground",
+        "compute",
+        "explain",
+        "finish"
+      ],
+      "occurrences": 8,
+      "types_realized": [
+        "T3",
+        "T4",
+        "T5"
+      ],
+      "occurrences_by_type": {
+        "T3": 2,
+        "T4": 4,
+        "T5": 2
+      },
+      "responsibilities": [
+        "L3",
+        "L4",
+        "L5",
+        "L6"
+      ],
+      "value": "514,000.00",
+      "measurement_method": "direct_measurement",
+      "explained": true,
+      "rationale": "4 candidates; selected 'GrossGlobalScope1Emissions'"
+    },
+    {
+      "id": "G4",
+      "description": "no metric named; agent selects by required method",
+      "status": "success",
+      "actions": [
+        "discover",
+        "select",
+        "ground",
+        "compute",
+        "explain",
+        "finish"
+      ],
+      "occurrences": 8,
+      "types_realized": [
+        "T3",
+        "T4",
+        "T5"
+      ],
+      "occurrences_by_type": {
+        "T3": 2,
+        "T4": 4,
+        "T5": 2
+      },
+      "responsibilities": [
+        "L3",
+        "L4",
+        "L5",
+        "L6"
+      ],
+      "value": "0.0710",
+      "measurement_method": "calculation_model",
+      "explained": true,
+      "rationale": "4 candidates; selected 'GHGEmissionIntensity'"
+    },
+    {
+      "id": "G5",
+      "description": "goal that no discovered metric satisfies",
+      "status": "unsatisfiable",
+      "actions": [
+        "discover",
+        "select"
+      ],
+      "occurrences": 2,
+      "types_realized": [
+        "T4"
+      ],
+      "occurrences_by_type": {
+        "T4": 2
+      },
+      "responsibilities": [
+        "L3",
+        "L5"
+      ],
+      "value": null,
+      "measurement_method": null,
+      "explained": false,
+      "rationale": "no candidate satisfies the goal"
+    }
+  ]
+}

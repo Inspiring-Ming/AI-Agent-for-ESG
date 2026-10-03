@@ -1,0 +1,72 @@
+{
+  "mechanism": "deployed service API (HTTP/REST)",
+  "summary": {
+    "I1": {
+      "probes": 2,
+      "preserved": true
+    },
+    "I2": {
+      "probes": 2,
+      "preserved": true
+    },
+    "I3": {
+      "probes": 2,
+      "preserved": true
+    },
+    "I4": {
+      "probes": 1,
+      "preserved": true
+    }
+  },
+  "findings": [
+    {
+      "invariant": "I1",
+      "probe": "the reported value must originate from the computation service, not from model inference",
+      "expected": "exactly one computation-service invocation; the explanation restates that value without recomputing it",
+      "observed": "computation-service invocations=1; reported value=0.0710; value restated in explanation=True",
+      "preserved": true
+    },
+    {
+      "invariant": "I1",
+      "probe": "L3 must not be able to execute an enterprise capability directly",
+      "expected": "the coordinator exposes no execution mechanism of its own",
+      "observed": "coordinator exposes execution method=False",
+      "preserved": true
+    },
+    {
+      "invariant": "I2",
+      "probe": "execution-local state and reusable enterprise knowledge must be owned by different responsibilities",
+      "expected": "L3 holds only execution-local state; definitions arrive from L5 with knowledge-store provenance",
+      "observed": "L3 execution-state keys=['candidates', 'explanation', 'goal', 'principal', 'selected', 'selection_rationale', 'status', 'steps', 'trace']; L5 context store='ESG Metric Knowledge Graph (RDF)' via 6 competency questions",
+      "preserved": true
+    },
+    {
+      "invariant": "I2",
+      "probe": "a second execution must re-retrieve knowledge rather than reuse coordinator state",
+      "expected": "the knowledge graph is queried again for the new execution",
+      "observed": "knowledge-graph model queries: before=1, after=2",
+      "preserved": true
+    },
+    {
+      "invariant": "I3",
+      "probe": "a principal admitted at L2 but lacking the resource entitlement must still be refused at L6",
+      "expected": "admission at the system boundary does not confer resource-specific authorization",
+      "observed": "refused at L6: principal lacks entitlement 'esg.metric.compute' for compute_metric",
+      "preserved": true
+    },
+    {
+      "invariant": "I3",
+      "probe": "an unauthenticated request must not reach coordination",
+      "expected": "L2 refuses the request before L3 is engaged",
+      "observed": "refused at L2: authentication failed: invalid token",
+      "preserved": true
+    },
+    {
+      "invariant": "I4",
+      "probe": "each responsibility must emit evidence about its own operations, correlatable across the execution",
+      "expected": "evidence originates from multiple responsibilities and shares a correlation identifier established at the boundary",
+      "observed": "emitting responsibilities=['L3', 'L4', 'L5', 'L6']; interactions carrying trace_id eb8d4843aae4=2",
+      "preserved": true
+    }
+  ]
+}

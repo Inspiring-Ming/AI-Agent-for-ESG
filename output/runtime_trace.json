@@ -1,0 +1,165 @@
+{
+  "scenario": "ESG greenhouse-gas emissions intensity request",
+  "interaction_occurrences": 11,
+  "interaction_types_defined": 8,
+  "interaction_types_observed": [
+    "T1",
+    "T2",
+    "T3",
+    "T4",
+    "T5"
+  ],
+  "occurrences_by_type": {
+    "T1": 2,
+    "T2": 1,
+    "T3": 2,
+    "T4": 4,
+    "T5": 2
+  },
+  "responsibilities_touched": [
+    "L1",
+    "L2",
+    "L3",
+    "L4",
+    "L5",
+    "L6"
+  ],
+  "interactions": [
+    {
+      "seq": 1,
+      "source": "L1",
+      "target": "L2",
+      "purpose": "request admission",
+      "ttype": "T1",
+      "payload": {
+        "company": "STMicroelectronics NV",
+        "metric": "GHGEmissionIntensity",
+        "year": "2023"
+      },
+      "elapsed_ms": 0.0
+    },
+    {
+      "seq": 2,
+      "source": "L2",
+      "target": "L3",
+      "purpose": "authorized request + identity context",
+      "ttype": "T2",
+      "payload": {
+        "subject": "analyst@enterprise.example",
+        "trace_id": "725d435b13de"
+      },
+      "elapsed_ms": 0.0
+    },
+    {
+      "seq": 3,
+      "source": "L3",
+      "target": "L5",
+      "purpose": "capability discovery",
+      "ttype": "T4",
+      "payload": {
+        "category": "Greenhouse Gas Emissions",
+        "industry": "semiconductors",
+        "trace_id": "725d435b13de"
+      },
+      "elapsed_ms": 0.1
+    },
+    {
+      "seq": 4,
+      "source": "L5",
+      "target": "L3",
+      "purpose": "discovered metrics",
+      "ttype": "T4",
+      "payload": {
+        "count": 4
+      },
+      "elapsed_ms": 239.8
+    },
+    {
+      "seq": 5,
+      "source": "L3",
+      "target": "L5",
+      "purpose": "context retrieval",
+      "ttype": "T4",
+      "payload": {
+        "metric": "GHGEmissionIntensity",
+        "industry": "semiconductors",
+        "trace_id": "725d435b13de"
+      },
+      "elapsed_ms": 239.8
+    },
+    {
+      "seq": 6,
+      "source": "L5",
+      "target": "L3",
+      "purpose": "grounded context",
+      "ttype": "T4",
+      "payload": {
+        "framework": "SASB Semiconductors",
+        "method": "calculation_model",
+        "model": "GHGEmissionIntensityModel",
+        "competency_questions": 6
+      },
+      "elapsed_ms": 877.3
+    },
+    {
+      "seq": 7,
+      "source": "L3",
+      "target": "L6",
+      "purpose": "action intent",
+      "ttype": "T5",
+      "payload": {
+        "tool": "compute_metric",
+        "metric": "GHGEmissionIntensity",
+        "model": "GHGEmissionIntensityModel",
+        "method": "calculation_model"
+      },
+      "elapsed_ms": 877.4
+    },
+    {
+      "seq": 8,
+      "source": "L6",
+      "target": "L3",
+      "purpose": "observation",
+      "ttype": "T5",
+      "payload": {
+        "status": "success",
+        "value": "0.0710"
+      },
+      "elapsed_ms": 1286.0
+    },
+    {
+      "seq": 9,
+      "source": "L3",
+      "target": "L4",
+      "purpose": "inference request",
+      "ttype": "T3",
+      "payload": {
+        "provider": "deterministic-template"
+      },
+      "elapsed_ms": 1286.0
+    },
+    {
+      "seq": 10,
+      "source": "L4",
+      "target": "L3",
+      "purpose": "inference result",
+      "ttype": "T3",
+      "payload": {
+        "contract": "success"
+      },
+      "elapsed_ms": 1286.0
+    },
+    {
+      "seq": 11,
+      "source": "L3",
+      "target": "L1",
+      "purpose": "result and explanation",
+      "ttype": "T1",
+      "payload": {
+        "value": "0.0710",
+        "unit": "tons CO2e per million USD"
+      },
+      "elapsed_ms": 1286.0
+    }
+  ]
+}

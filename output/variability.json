@@ -1,0 +1,46 @@
+{
+  "conditional_capabilities": [
+    {
+      "capability": "Asynchronous / event-driven execution",
+      "responsibility": "L7",
+      "instantiated": false,
+      "condition": "workload requires decoupling or long-running execution",
+      "reason": "the metric request completes through direct synchronous service interaction; report generation would introduce it"
+    },
+    {
+      "capability": "Multi-agent collaboration",
+      "responsibility": "L3",
+      "instantiated": false,
+      "condition": "execution involves multiple collaborating agents",
+      "reason": "a single coordinating agent is sufficient for the scenario"
+    },
+    {
+      "capability": "Human approval gate",
+      "responsibility": "L6",
+      "instantiated": false,
+      "condition": "action is consequential and governance requires approval",
+      "reason": "metric computation is a bounded analytical read"
+    },
+    {
+      "capability": "Execution isolation / sandboxing",
+      "responsibility": "L6",
+      "instantiated": false,
+      "condition": "risk or execution environment requires isolation",
+      "reason": "the invoked capability is a trusted first-party service"
+    },
+    {
+      "capability": "Persistent memory across executions",
+      "responsibility": "L5",
+      "instantiated": false,
+      "condition": "task requires recall across separate executions",
+      "reason": "the scenario is a single stateless request"
+    },
+    {
+      "capability": "Evaluation and observability",
+      "responsibility": "L9",
+      "instantiated": false,
+      "condition": "deployed operation requires telemetry and evaluation",
+      "reason": "not exercised by a single traced execution"
+    }
+  ]
+}
