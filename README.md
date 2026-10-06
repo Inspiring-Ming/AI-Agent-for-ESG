@@ -57,11 +57,14 @@ python3 test_invariants.py # probes the four boundary invariants
 python3 independent_mapping.py          # mapping of an independent architecture
 python3 independent_mapping.py --verify # re-fetch and check element names
 python3 test_boundaries.py # regression checks
+python3 figures/make_fig_instantiation.py  # regenerate the instantiation figure
 ```
 
 Add `--mechanism local --esg-root PATH` (or set `ESG_ROOT`) to import the ESG
 services in process instead of calling the deployed API. Both mechanisms
-produce the same results; only the realization mechanism differs.
+produce identical results for all five goals; only the realization mechanism
+differs. If the deployment is unreachable, the scripts exit with guidance to
+use `--mechanism local` rather than a traceback.
 
 **No API key is required.** L4 defaults to a deterministic explanation provider
 so recorded traces are reproducible. Setting `ANTHROPIC_API_KEY` substitutes a
@@ -122,4 +125,5 @@ agentic/
   adapters/           interchangeable access to the ESG system (HTTP / in-process)
   trace/              interaction recorder and the T1–T8 interaction types
 output/               recorded results (JSON)
+figures/              instantiation figure, generated from output/
 ```
