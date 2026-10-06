@@ -52,7 +52,7 @@ VARIABILITY = [
     {"capability": "Asynchronous / event-driven execution",
      "responsibility": "L7", "instantiated": False,
      "condition": "workload requires decoupling or long-running execution",
-     "reason": "requests complete synchronously within seconds"},
+     "reason": "requests complete synchronously in under a minute"},
     {"capability": "Multi-agent collaboration", "responsibility": "L3",
      "instantiated": False,
      "condition": "execution involves multiple collaborating agents",

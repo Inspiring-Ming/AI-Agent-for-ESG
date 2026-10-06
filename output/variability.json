@@ -12,7 +12,7 @@
       "responsibility": "L7",
       "instantiated": false,
       "condition": "workload requires decoupling or long-running execution",
-      "reason": "requests complete synchronously within seconds"
+      "reason": "requests complete synchronously in under a minute"
     },
     {
       "capability": "Multi-agent collaboration",
