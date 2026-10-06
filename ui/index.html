@@ -1,0 +1,241 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ESG Agent</title>
+<style>
+  :root {
+    --ink:#16181d; --muted:#5b6170; --line:#e3e6ec; --bg:#f6f7f9; --card:#fff;
+    --accent:#2457c5; --ok:#1e7a46; --warn:#a4541b;
+    --L1:#3c9a4a; --L2:#c99a2e; --L3:#c94a4a; --L4:#8a55b5; --L5:#2f6db5; --L6:#2b8a6e;
+  }
+  * { box-sizing:border-box; }
+  body { margin:0; font:15px/1.5 -apple-system, "Segoe UI", Roboto, sans-serif;
+         color:var(--ink); background:var(--bg); }
+  header { padding:22px 28px 6px; }
+  h1 { margin:0 0 4px; font-size:22px; }
+  .lead { color:var(--muted); max-width:900px; margin:0; }
+  .compare { display:grid; grid-template-columns:1fr 1fr; gap:14px; padding:14px 28px 4px; }
+  .compare div { background:var(--card); border:1px solid var(--line); border-radius:10px; padding:12px 14px; }
+  .compare h3 { margin:0 0 6px; font-size:14px; }
+  .compare ol { margin:0; padding-left:20px; color:var(--muted); font-size:14px; }
+  main { display:grid; grid-template-columns:330px 1fr; gap:18px; padding:16px 28px 40px; }
+  @media (max-width:900px){ main, .compare { grid-template-columns:1fr; } }
+  .panel { background:var(--card); border:1px solid var(--line); border-radius:12px; padding:16px; }
+  label { display:block; font-size:13px; font-weight:600; margin:12px 0 4px; }
+  input, select { width:100%; padding:8px 10px; border:1px solid #cdd2db; border-radius:8px; font-size:14px; background:#fff; }
+  .check { display:flex; gap:8px; align-items:center; margin-top:12px; font-size:14px; }
+  .check input { width:auto; }
+  button { margin-top:16px; width:100%; padding:10px; border:0; border-radius:8px;
+           background:var(--accent); color:#fff; font-size:15px; font-weight:600; cursor:pointer; }
+  button:disabled { opacity:.6; cursor:wait; }
+  .presets { margin-top:14px; border-top:1px solid var(--line); padding-top:10px; }
+  .presets p { margin:0 0 6px; font-size:13px; font-weight:600; }
+  .presets a { display:block; font-size:13px; color:var(--accent); cursor:pointer; padding:3px 0; }
+  .answer { display:flex; gap:18px; align-items:flex-start; flex-wrap:wrap; }
+  .value { font-size:34px; font-weight:700; line-height:1.1; }
+  .unit { color:var(--muted); font-size:14px; }
+  .facts { font-size:14px; color:var(--muted); }
+  .facts b { color:var(--ink); font-weight:600; }
+  .explain { margin-top:10px; padding:10px 12px; background:#f2f5fb; border-radius:8px; font-size:14px; }
+  .stop { color:var(--warn); font-weight:600; }
+  h2 { font-size:16px; margin:20px 0 10px; }
+  .step { display:grid; grid-template-columns:34px 1fr; gap:12px; margin-bottom:12px; }
+  .num { width:30px; height:30px; border-radius:50%; background:var(--accent); color:#fff;
+         display:flex; align-items:center; justify-content:center; font-weight:700; font-size:14px; }
+  .step .body { background:var(--card); border:1px solid var(--line); border-radius:10px; padding:10px 12px; }
+  .step .title { font-weight:700; }
+  .why { color:var(--muted); font-size:13px; margin:2px 0 6px; }
+  .why::before { content:"Agent's reason: "; font-weight:600; }
+  .ex { display:flex; gap:8px; align-items:center; font-size:13.5px; padding:4px 0; border-top:1px dashed var(--line); flex-wrap:wrap; }
+  .ex:first-of-type { border-top:0; }
+  .chip { padding:1px 7px; border-radius:6px; color:#fff; font-size:12px; font-weight:700; white-space:nowrap; }
+  .arrow { color:var(--muted); }
+  .type { font-size:11.5px; font-weight:700; border:1px solid #c8ccd6; border-radius:5px; padding:0 5px; color:var(--muted); }
+  .existing { font-size:11px; color:var(--L5); border:1px solid var(--L5); border-radius:5px; padding:0 4px; }
+  .nointeract { font-size:13px; color:var(--muted); font-style:italic; }
+  .summary { display:flex; gap:10px; flex-wrap:wrap; margin-top:4px; }
+  .summary span { background:var(--card); border:1px solid var(--line); border-radius:8px; padding:6px 10px; font-size:13px; }
+  .legend { font-size:13px; color:var(--muted); margin-top:16px; line-height:1.9; }
+  .err { color:#b42318; white-space:pre-wrap; }
+  .empty { color:var(--muted); }
+</style>
+</head>
+<body>
+<header>
+  <h1>ESG Agent: what it does</h1>
+  <p class="lead">You ask for an ESG metric. The agent works out <b>which metric</b> you mean,
+  <b>how it is calculated</b>, has the existing ESG system <b>compute it</b>, and <b>explains</b> the result.
+  Each step below shows the agent's decision and the part of the architecture it used.</p>
+</header>
+
+<section class="compare">
+  <div>
+    <h3>Without the agent (existing ESG system)</h3>
+    <ol>
+      <li>The analyst picks the company and year</li>
+      <li>The analyst browses categories and picks a metric</li>
+      <li>The analyst picks the calculation model</li>
+      <li>The analyst presses calculate and reads the number</li>
+    </ol>
+  </div>
+  <div>
+    <h3>With the agent</h3>
+    <ol>
+      <li>The analyst states the goal once</li>
+      <li>The agent discovers the metrics and chooses one</li>
+      <li>The agent finds the calculation model in the knowledge graph</li>
+      <li>The agent has the value computed and explains it</li>
+    </ol>
+  </div>
+</section>
+
+<main>
+  <div class="panel">
+    <label for="company">Company</label>
+    <input id="company" value="STMicroelectronics NV">
+    <label for="year">Year</label>
+    <input id="year" value="2023">
+    <label for="category">ESG category</label>
+    <select id="category">
+      <option>Greenhouse Gas Emissions</option>
+      <option>Water Management</option>
+      <option>Product Lifecycle Management</option>
+      <option>Workforce Health &amp; Safety</option>
+      <option>Material Sourcing</option>
+    </select>
+    <label for="metric">Metric</label>
+    <select id="metric"><option>loading…</option></select>
+    <div class="check"><input type="checkbox" id="explain" checked>
+      <span>Ask the agent to explain the result</span></div>
+    <button id="run">Run the agent</button>
+
+    <div class="presets">
+      <p>Try these</p>
+      <a data-p='{"metric":"GHGEmissionIntensity","explain":true}'>Named metric, with explanation</a>
+      <a data-p='{"metric":"GHGEmissionIntensity","explain":false}'>Same metric, no explanation</a>
+      <a data-p='{"metric":"","prefer":"calculation_model","explain":true}'>Let the agent choose the metric</a>
+      <a data-p='{"metric":"NonexistentMetric","explain":true}'>A metric that does not exist</a>
+    </div>
+
+    <div class="legend">
+      <b>Parts of the architecture</b><br>
+      <span class="chip" style="background:var(--L1)">L1</span> analyst interface<br>
+      <span class="chip" style="background:var(--L2)">L2</span> access gate<br>
+      <span class="chip" style="background:var(--L3)">L3</span> the agent (decides)<br>
+      <span class="chip" style="background:var(--L4)">L4</span> explanation provider<br>
+      <span class="chip" style="background:var(--L5)">L5</span> ESG knowledge graph <span class="existing">existing</span><br>
+      <span class="chip" style="background:var(--L6)">L6</span> ESG computation <span class="existing">existing</span>
+    </div>
+  </div>
+
+  <div id="out"><p class="empty">Choose a request and press <b>Run the agent</b>.</p></div>
+</main>
+
+<script>
+const $ = (id) => document.getElementById(id);
+const CHIP = (r) => `<span class="chip" style="background:var(--${r})">${r}</span>`;
+let RESP = {};
+
+async function loadMetrics() {
+  const sel = $("metric");
+  sel.innerHTML = "<option>loading…</option>";
+  try {
+    const r = await fetch(`/api/metrics?category=${encodeURIComponent($("category").value)}`);
+    const d = await r.json();
+    if (d.error) throw new Error(d.error);
+    sel.innerHTML =
+      `<option value="" data-prefer="calculation_model">Let the agent choose (a calculated metric)</option>` +
+      d.metrics.map(m => `<option value="${m.name}">${m.name} — ${m.calculation_method}</option>`).join("") +
+      `<option value="NonexistentMetric">A metric that does not exist</option>`;
+    sel.selectedIndex = Math.max(0, [...sel.options].findIndex(o => o.value === "GHGEmissionIntensity"));
+  } catch (e) {
+    sel.innerHTML = `<option value="GHGEmissionIntensity">GHGEmissionIntensity</option>`;
+  }
+}
+
+function exchange(e) {
+  const r = RESP[e.target] || [];
+  return `<div class="ex">${CHIP(e.source)}<span class="arrow">→</span>${CHIP(e.target)}
+    <span class="type">${e.type}</span><span>${e.text}</span>
+    ${r[2] === "existing" ? '<span class="existing">existing ESG system</span>' : ""}</div>`;
+}
+
+function render(d) {
+  RESP = d.responsibilities || {};
+  let html = "";
+  if (d.status === "success") {
+    const inputs = d.inputs ? Object.entries(d.inputs)
+      .map(([k, v]) => `${k.replaceAll("_", " ")} = ${Number(v).toLocaleString()}`).join(", ") : "";
+    html += `<div class="panel"><div class="answer"><div>
+        <div class="value">${d.value}</div><div class="unit">${d.unit || ""}</div></div>
+      <div class="facts"><b>${d.metric}</b> · ${d.framework || ""}<br>
+        Calculation: <b>${d.method}</b>${d.equation ? ` — ${d.equation}` : ""}<br>
+        ${inputs ? `Inputs: ${inputs}` : ""}
+        ${d.rationale ? `<br>Agent's choice: ${d.rationale}` : ""}</div></div>
+      ${d.explanation ? `<div class="explain"><b>Explanation:</b> ${d.explanation}</div>` : ""}</div>`;
+  } else {
+    html += `<div class="panel"><span class="stop">The agent stopped:</span> ${d.error || d.status}
+      ${d.rationale ? `<br><span class="facts">Agent's choice: ${d.rationale}</span>` : ""}</div>`;
+  }
+
+  html += `<h2>What happened, step by step</h2>`;
+  html += `<div class="step"><div class="num">0</div><div class="body">
+      <div class="title">Request enters the system</div>
+      <div class="why">The access gate checks who is asking before the agent starts</div>
+      ${(d.entry || []).map(exchange).join("")}</div></div>`;
+  (d.steps || []).forEach((s, i) => {
+    html += `<div class="step"><div class="num">${i + 1}</div><div class="body">
+        <div class="title">${s.label}</div><div class="why">${s.why}</div>
+        ${s.exchanges.length ? s.exchanges.map(exchange).join("")
+          : '<div class="nointeract">Decided inside the agent; nothing sent to another part.</div>'}
+      </div></div>`;
+  });
+  if ((d.exit || []).length) {
+    html += `<div class="step"><div class="num">✓</div><div class="body">
+        <div class="title">Answer returned</div>
+        <div class="why">The access gate checks the outgoing answer, then the analyst sees it</div>
+        ${d.exit.map(exchange).join("")}</div></div>`;
+  }
+  if (d.summary) {
+    html += `<h2>In architecture terms</h2><div class="summary">
+      <span><b>${d.summary.occurrences}</b> exchanges</span>
+      <span>interaction types: <b>${d.summary.types.join(", ")}</b></span>
+      <span>parts used: ${d.summary.responsibilities.map(CHIP).join(" ")}</span></div>`;
+  }
+  $("out").innerHTML = html;
+}
+
+async function run(preset) {
+  const btn = $("run"); btn.disabled = true; btn.textContent = "Running…";
+  const sel = $("metric");
+  const opt = sel.options[sel.selectedIndex];
+  const body = {
+    company: $("company").value, year: $("year").value,
+    category: $("category").value, explain: $("explain").checked,
+    metric: preset ? preset.metric : sel.value,
+  };
+  const prefer = preset ? preset.prefer : (opt && opt.dataset.prefer);
+  if (!body.metric && prefer) body.prefer_method = prefer;
+  try {
+    const r = await fetch("/api/run", { method: "POST",
+      headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
+    render(await r.json());
+  } catch (e) {
+    $("out").innerHTML = `<div class="panel err">${e}</div>`;
+  } finally { btn.disabled = false; btn.textContent = "Run the agent"; }
+}
+
+$("run").onclick = () => run();
+$("category").onchange = loadMetrics;
+document.querySelectorAll(".presets a").forEach(a => a.onclick = () => {
+  const p = JSON.parse(a.dataset.p);
+  $("category").value = "Greenhouse Gas Emissions";
+  $("explain").checked = p.explain;
+  run(p);
+});
+loadMetrics();
+</script>
+</body>
+</html>

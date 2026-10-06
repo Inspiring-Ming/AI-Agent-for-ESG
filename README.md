@@ -75,6 +75,17 @@ overrides the model id.
 > `--mechanism local` against a clone of the ESG Metric System, or inspect the
 > recorded results in `output/`.
 
+## Interactive view
+
+```bash
+pip install flask
+python3 ui/app.py          # then open http://localhost:8090
+```
+
+Type a request and watch the agent work: each step shows the agent's decision,
+its reason, which responsibility it engaged, and what was exchanged, followed by
+the computed value and explanation.
+
 ## Results
 
 Recorded in `output/` and reproduced by the commands above.

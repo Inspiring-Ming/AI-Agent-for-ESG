@@ -78,8 +78,10 @@ class ActionRuntime:
         r = self._esg.calculate(args["industry"], args["company"],
                                 args["year"], [args["metric"]])
         if r.get("status") != "success":
-            return {"status": "error",
-                    "error": r.get("error", "calculation failed")}
+            # the ESG service reports its reason in different fields
+            reason = (r.get("error") or r.get("message")
+                      or r.get("display_value") or "calculation failed")
+            return {"status": "error", "error": str(reason).lstrip("\u274c ")}
 
         return {
             "status": "success",
