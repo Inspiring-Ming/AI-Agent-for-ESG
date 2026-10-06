@@ -1,0 +1,143 @@
+{
+  "request": {
+    "holdings": [
+      {
+        "company": "STMicroelectronics NV",
+        "weight_pct": 30
+      },
+      {
+        "company": "Infineon Technologies AG",
+        "weight_pct": 25
+      },
+      {
+        "company": "Micron Technology Inc",
+        "weight_pct": 25
+      },
+      {
+        "company": "Taiwan Semiconductor Manufacturing Co Ltd",
+        "weight_pct": 20
+      }
+    ],
+    "year": "2023",
+    "question": "What is the carbon intensity of my portfolio, and which holdings drive it?"
+  },
+  "result": {
+    "status": "success",
+    "answer": "Your portfolio's 2023 carbon intensity (WACI) is **163.59 t CO2e per USD million of revenue**, but this only covers 80% of the portfolio's weight. The metric used is GHGEmissionIntensity, which is a company's Scope 1 plus Scope 2 emissions divided by its revenue.\n\n- **Micron Technology Inc drives most of it:** its intensity is 439.94, which contributes 137.48 points, or 84.0% of the WACI, from only a 25% weight.\n- **STMicroelectronics NV** (intensity 45.47) adds 17.05 points, or 10.4%.\n- **Infineon Technologies AG** (intensity 28.99) adds 9.06 points, or 5.5%.\n- **Taiwan Semiconductor Manufacturing Co Ltd (20% weight) is left out:** its intensity couldn't be computed because the revenue figure is missing (\"Missing input values for: ['Revenue']\"). No substitute value was used, so adding it later could change the portfolio figure.",
+    "grounding": {
+      "numbers": [
+        2023.0,
+        163.59,
+        80.0,
+        439.94,
+        137.48,
+        84.0,
+        25.0,
+        45.47,
+        17.05,
+        10.4,
+        28.99,
+        9.06,
+        5.5,
+        20.0
+      ],
+      "unsupported": [],
+      "grounded": true,
+      "revisions": 0,
+      "flagged_in_draft": []
+    },
+    "portfolio": {
+      "status": "success",
+      "year": "2023",
+      "unit": "t CO2e per USD million revenue",
+      "waci": 163.59,
+      "covered_weight_pct": 80.0,
+      "contributions": [
+        {
+          "company": "Micron Technology Inc",
+          "weight_pct": 25.0,
+          "intensity": 439.94,
+          "contribution": 137.48,
+          "share_of_waci_pct": 84.0
+        },
+        {
+          "company": "STMicroelectronics NV",
+          "weight_pct": 30.0,
+          "intensity": 45.47,
+          "contribution": 17.05,
+          "share_of_waci_pct": 10.4
+        },
+        {
+          "company": "Infineon Technologies AG",
+          "weight_pct": 25.0,
+          "intensity": 28.99,
+          "contribution": 9.06,
+          "share_of_waci_pct": 5.5
+        }
+      ],
+      "not_covered": [
+        {
+          "company": "Taiwan Semiconductor Manufacturing Co Ltd",
+          "weight_pct": 20.0,
+          "reason": "Step 3 Failed: Missing input values for: ['Revenue']"
+        }
+      ]
+    },
+    "computations": [
+      {
+        "company": "STMicroelectronics NV",
+        "year": "2023",
+        "metric": "GHGEmissionIntensity",
+        "status": "success",
+        "value": "45.4703",
+        "unit": "tons CO2e per million USD",
+        "error": null,
+        "inputs": {
+          "revenue": 17286.0,
+          "scope1_emissions": 514000.0,
+          "scope2_emissions": 272000.0
+        }
+      },
+      {
+        "company": "Infineon Technologies AG",
+        "year": "2023",
+        "metric": "GHGEmissionIntensity",
+        "status": "success",
+        "value": "28.9938",
+        "unit": "tons CO2e per million USD",
+        "error": null,
+        "inputs": {
+          "revenue": 17260.948,
+          "scope1_emissions": 246126.0,
+          "scope2_emissions": 254335.0
+        }
+      },
+      {
+        "company": "Micron Technology Inc",
+        "year": "2023",
+        "metric": "GHGEmissionIntensity",
+        "status": "success",
+        "value": "439.9378",
+        "unit": "tons CO2e per million USD",
+        "error": null,
+        "inputs": {
+          "revenue": 15540.0,
+          "scope1_emissions": 2698572.0,
+          "scope2_emissions": 4138062.0
+        }
+      },
+      {
+        "company": "Taiwan Semiconductor Manufacturing Co Ltd",
+        "year": "2023",
+        "metric": "GHGEmissionIntensity",
+        "status": "error",
+        "value": null,
+        "unit": null,
+        "error": "Step 3 Failed: Missing input values for: ['Revenue']",
+        "inputs": null
+      }
+    ],
+    "model_calls": 5,
+    "l6_invocations": 5
+  }
+}

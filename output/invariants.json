@@ -11,7 +11,7 @@
       "preserved": true
     },
     "I3": {
-      "probes": 2,
+      "probes": 3,
       "preserved": true
     },
     "I4": {
@@ -22,9 +22,9 @@
   "findings": [
     {
       "invariant": "I1",
-      "probe": "the reported value must originate from the computation service, not from model inference",
-      "expected": "exactly one computation-service invocation; the explanation restates that value without recomputing it",
-      "observed": "computation-service invocations=1; reported value=45.4703; value restated in explanation=True; numbers in model answer [2023.0, 45.4703, 514000.0, 272000.0, 17286.0, 45.47, 2023.0] all traced to L5/L6 results=True",
+      "probe": "every value reported must originate from an L6 service, not from model inference",
+      "expected": "one L6 computation per holding; the portfolio figure from the L6 portfolio service; every number in the answer traced to L5/L6",
+      "observed": "computation-service calls=4 for 4 holdings; portfolio-service calls=1; holding intensities equal L6 results=True; numbers in answer [2023.0, 144.4, 100.0, 439.94, 109.98, 76.2, 25.0, 45.47, 13.64, 9.4, 67.61, 13.52, 9.4, 28.99, 7.25, 4138062.0, 2698572.0, 15540.0] traced=True",
       "preserved": true
     },
     {
@@ -38,14 +38,14 @@
       "invariant": "I2",
       "probe": "execution-local state and reusable enterprise knowledge must be owned by different responsibilities",
       "expected": "L3 holds only execution-local state; definitions arrive from L5 with knowledge-store provenance",
-      "observed": "L3 execution-state keys=['candidates', 'computations', 'final_text', 'goal', 'l6_invocations', 'model_calls', 'plan', 'principal', 'selected', 'status']; L5 context store='ESG Metric Knowledge Graph (RDF)' via 5 competency questions",
+      "observed": "L3 execution-state keys=['candidates', 'computations', 'evidence', 'final_text', 'flagged', 'goal', 'l6_invocations', 'model_calls', 'plan', 'portfolio', 'principal', 'revisions', 'status']; L5 context store='ESG Metric Knowledge Graph (RDF)' via 5 competency questions",
       "preserved": true
     },
     {
       "invariant": "I2",
       "probe": "a second execution must re-retrieve knowledge rather than reuse coordinator state",
       "expected": "the knowledge graph is queried again for the new execution",
-      "observed": "knowledge-graph queries: before=1, after=2",
+      "observed": "metric-definition retrievals: before=1, after=2",
       "preserved": true
     },
     {
@@ -63,10 +63,17 @@
       "preserved": true
     },
     {
+      "invariant": "I3",
+      "probe": "a consequential action must not take effect without approval by an authorized principal other than the requester",
+      "expected": "proposal held pending; refused for the analyst and for the requester; accepted from the portfolio manager",
+      "observed": "proposal status=pending_approval; analyst: refused (principal lacks entitlement 'esg.portfolio.approve' for approving proposal 4fd8ee84); requester holding the approval entitlement: refused (a proposal cannot be approved by the principal who requested it); portfolio manager: approved",
+      "preserved": true
+    },
+    {
       "invariant": "I4",
       "probe": "each responsibility must emit evidence about its own operations, correlatable across the execution",
       "expected": "evidence originates from multiple responsibilities and shares a correlation identifier established at the boundary",
-      "observed": "emitting responsibilities=['L3', 'L4', 'L5', 'L6']; interactions carrying trace_id a5ce308467bc=2",
+      "observed": "emitting responsibilities=['L3', 'L4', 'L5', 'L6']; occurrences carrying trace_id c50a79443497=2",
       "preserved": true
     }
   ]

@@ -4,6 +4,7 @@
 # esg            existing ESG Metric System (knowledge graph and computation)
 # mcp-knowledge  MCP server exposing the knowledge graph            (L5)
 # mcp-compute    MCP server exposing metric computation             (L6)
+# mcp-portfolio  MCP server for portfolio analytics (WACI, rebalance) (L6)
 # agent          FastAPI service: analyst API + page (L1), access gate (L2),
 #                agent runtime (L3), Claude model access (L4)
 #
@@ -44,6 +45,11 @@ services:
     environment: {ESG_URL: "http://esg:8080", MCP_PORT: "8102"}
     depends_on: {esg: {condition: service_healthy}}
 
+  mcp-portfolio:
+    build: .
+    command: ["python", "-m", "mcp_servers.portfolio_server"]
+    environment: {MCP_PORT: "8103"}
+
   agent:
     build: .
     command: ["uvicorn", "service.api:app", "--host", "0.0.0.0", "--port", "8090"]
@@ -51,5 +57,6 @@ services:
     environment:
       MCP_KNOWLEDGE_URL: http://mcp-knowledge:8101/mcp
       MCP_COMPUTE_URL: http://mcp-compute:8102/mcp
+      MCP_PORTFOLIO_URL: http://mcp-portfolio:8103/mcp
     ports: ["8090:8090"]
-    depends_on: [mcp-knowledge, mcp-compute]
+    depends_on: [mcp-knowledge, mcp-compute, mcp-portfolio]

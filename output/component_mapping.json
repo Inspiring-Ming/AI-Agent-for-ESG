@@ -1,43 +1,40 @@
 {
-  "scenario": {
-    "company": "STMicroelectronics NV",
-    "year": "2023",
-    "industry": "semiconductors",
-    "category": "Greenhouse Gas Emissions",
-    "metric": "GHGEmissionIntensity",
-    "explain": true
-  },
   "mechanism": "MCP (streamable HTTP)",
   "mapping": [
     {
       "responsibility": "L1",
-      "component": "FastAPI service and analyst page",
+      "component": "Web service and portfolio analyst page",
       "origin": "this package"
     },
     {
       "responsibility": "L2",
-      "component": "Access gate: signed session token, request validation, rate limit, egress check",
+      "component": "Access gate: signed session token, role-based entitlements, request validation, rate limit, egress check",
       "origin": "this package"
     },
     {
       "responsibility": "L3",
-      "component": "Agent runtime: model-driven tool-use loop with guardrails",
+      "component": "Agent runtime: model-driven tool-use loop with execution constraints",
       "origin": "this package"
     },
     {
       "responsibility": "L4",
-      "component": "Model access: Claude, output-contract validation, server-side fallback",
+      "component": "Model access: Claude, inference-contract validation, server-side fallback",
       "origin": "this package"
     },
     {
       "responsibility": "L5",
-      "component": "ESG knowledge graph (RDF, competency questions) behind an MCP server",
+      "component": "ESG knowledge graph (competency questions) behind an MCP server",
       "origin": "existing ESG system"
     },
     {
       "responsibility": "L6",
-      "component": "Action runtime (entitlement check) + metric-computation service behind an MCP server",
+      "component": "Metric-computation service behind an MCP server",
       "origin": "existing ESG system"
+    },
+    {
+      "responsibility": "L6",
+      "component": "Portfolio service (WACI, rebalance evaluation) behind an MCP server; entitlement checks; approval gate",
+      "origin": "this package"
     },
     {
       "responsibility": "L8",

@@ -3,11 +3,11 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>ESG Agent</title>
+<title>ESG Portfolio Agent</title>
 <style>
   :root {
     --ink:#16181d; --muted:#5b6170; --line:#e3e6ec; --bg:#f6f7f9; --card:#fff;
-    --accent:#2457c5; --ok:#1e7a46; --warn:#a4541b;
+    --accent:#2457c5; --ok:#1e7a46; --warn:#a4541b; --bad:#b42318;
     --L1:#3c9a4a; --L2:#c99a2e; --L3:#c94a4a; --L4:#8a55b5; --L5:#2f6db5; --L6:#2b8a6e;
   }
   * { box-sizing:border-box; }
@@ -15,245 +15,268 @@
          color:var(--ink); background:var(--bg); }
   header { padding:22px 28px 6px; }
   h1 { margin:0 0 4px; font-size:22px; }
-  .lead { color:var(--muted); max-width:900px; margin:0; }
-  .compare { display:grid; grid-template-columns:1fr 1fr; gap:14px; padding:14px 28px 4px; }
-  .compare div { background:var(--card); border:1px solid var(--line); border-radius:10px; padding:12px 14px; }
-  .compare h3 { margin:0 0 6px; font-size:14px; }
-  .compare ol { margin:0; padding-left:20px; color:var(--muted); font-size:14px; }
-  main { display:grid; grid-template-columns:330px 1fr; gap:18px; padding:16px 28px 40px; }
-  @media (max-width:900px){ main, .compare { grid-template-columns:1fr; } }
+  .lead { color:var(--muted); max-width:980px; margin:0 0 6px; }
+  main { display:grid; grid-template-columns:400px 1fr; gap:18px; padding:14px 28px 40px; }
+  @media (max-width:980px){ main { grid-template-columns:1fr; } }
   .panel { background:var(--card); border:1px solid var(--line); border-radius:12px; padding:16px; }
   label { display:block; font-size:13px; font-weight:600; margin:12px 0 4px; }
-  input, select { width:100%; padding:8px 10px; border:1px solid #cdd2db; border-radius:8px; font-size:14px; background:#fff; }
-  .check { display:flex; gap:8px; align-items:center; margin-top:12px; font-size:14px; }
-  .check input { width:auto; }
-  button { margin-top:16px; width:100%; padding:10px; border:0; border-radius:8px;
+  input, select, textarea { width:100%; padding:7px 9px; border:1px solid #cdd2db; border-radius:8px;
+           font-size:14px; background:#fff; font-family:inherit; }
+  textarea { min-height:70px; resize:vertical; }
+  .row { display:grid; grid-template-columns:1fr 74px 28px; gap:6px; margin-bottom:6px; }
+  .row button { margin:0; padding:0; background:#eef0f4; color:var(--muted); font-size:16px; }
+  .two { display:grid; grid-template-columns:1fr 1fr; gap:8px; }
+  .small { font-size:12.5px; color:var(--muted); }
+  button { margin-top:14px; width:100%; padding:10px; border:0; border-radius:8px;
            background:var(--accent); color:#fff; font-size:15px; font-weight:600; cursor:pointer; }
+  button.link { background:none; color:var(--accent); padding:2px 0; margin:4px 0 0; width:auto; font-size:13px; font-weight:600; }
   button:disabled { opacity:.6; cursor:wait; }
   .presets { margin-top:14px; border-top:1px solid var(--line); padding-top:10px; }
   .presets p { margin:0 0 6px; font-size:13px; font-weight:600; }
   .presets a { display:block; font-size:13px; color:var(--accent); cursor:pointer; padding:3px 0; }
-  .answer { display:flex; gap:18px; align-items:flex-start; flex-wrap:wrap; }
-  .value { font-size:34px; font-weight:700; line-height:1.1; }
-  .unit { color:var(--muted); font-size:14px; }
-  .facts { font-size:14px; color:var(--muted); }
-  .facts b { color:var(--ink); font-weight:600; }
-  .explain { margin-top:10px; padding:10px 12px; background:#f2f5fb; border-radius:8px; font-size:14px; }
-  .stop { color:var(--warn); font-weight:600; }
+  .card { background:var(--card); border:1px solid var(--line); border-radius:12px; padding:14px 16px; margin-bottom:14px; }
+  .big { font-size:30px; font-weight:700; line-height:1.1; }
+  .muted { color:var(--muted); font-size:13.5px; }
+  .answer { margin-top:8px; padding:10px 12px; background:#f2f5fb; border-radius:8px; font-size:14px; }
+  .badge { display:inline-block; font-size:12px; font-weight:700; padding:2px 8px; border-radius:6px; color:#fff; }
+  table { border-collapse:collapse; width:100%; font-size:13.5px; margin-top:8px; }
+  th, td { text-align:left; padding:5px 8px; border-bottom:1px solid var(--line); }
+  th { color:var(--muted); font-weight:600; font-size:12.5px; }
+  td.n, th.n { text-align:right; font-variant-numeric:tabular-nums; }
+  .bar { height:8px; background:#e9ecf2; border-radius:4px; overflow:hidden; min-width:80px; }
+  .bar i { display:block; height:100%; background:var(--warn); }
+  .proposal { border:2px solid var(--warn); }
+  .proposal button { width:auto; padding:8px 16px; margin-right:8px; }
+  .reject { background:#6b7280 !important; }
   h2 { font-size:16px; margin:20px 0 10px; }
-  .step { display:grid; grid-template-columns:34px 1fr; gap:12px; margin-bottom:12px; }
+  .step { display:grid; grid-template-columns:34px 1fr; gap:12px; margin-bottom:10px; }
   .num { width:30px; height:30px; border-radius:50%; background:var(--accent); color:#fff;
-         display:flex; align-items:center; justify-content:center; font-weight:700; font-size:14px; }
-  .step .body { background:var(--card); border:1px solid var(--line); border-radius:10px; padding:10px 12px; }
+         display:flex; align-items:center; justify-content:center; font-weight:700; font-size:13px; }
+  .step .body { background:var(--card); border:1px solid var(--line); border-radius:10px; padding:9px 12px; }
   .step .title { font-weight:700; }
   .why { color:var(--muted); font-size:13px; margin:2px 0 6px; }
-  .why::before { content:"Reason: "; font-weight:600; }
-  .ex { display:flex; gap:8px; align-items:center; font-size:13.5px; padding:4px 0; border-top:1px dashed var(--line); flex-wrap:wrap; }
+  .ex { display:flex; gap:8px; align-items:center; font-size:13.5px; padding:3px 0; border-top:1px dashed var(--line); flex-wrap:wrap; }
   .ex:first-of-type { border-top:0; }
   .chip { padding:1px 7px; border-radius:6px; color:#fff; font-size:12px; font-weight:700; white-space:nowrap; }
   .arrow { color:var(--muted); }
   .type { font-size:11.5px; font-weight:700; border:1px solid #c8ccd6; border-radius:5px; padding:0 5px; color:var(--muted); }
-  .existing { font-size:11px; color:var(--L5); border:1px solid var(--L5); border-radius:5px; padding:0 4px; }
-  .nointeract { font-size:13px; color:var(--muted); font-style:italic; }
-  .summary { display:flex; gap:10px; flex-wrap:wrap; margin-top:4px; }
+  .summary { display:flex; gap:10px; flex-wrap:wrap; }
   .summary span { background:var(--card); border:1px solid var(--line); border-radius:8px; padding:6px 10px; font-size:13px; }
   .legend { font-size:13px; color:var(--muted); margin-top:16px; line-height:1.9; }
-  .err { color:#b42318; white-space:pre-wrap; }
-  .empty { color:var(--muted); }
+  .existing { font-size:11px; color:var(--L5); border:1px solid var(--L5); border-radius:5px; padding:0 4px; }
+  .err { color:var(--bad); white-space:pre-wrap; }
 </style>
 </head>
 <body>
 <header>
-  <h1>ESG Agent: what it does</h1>
-  <p class="lead">You ask for an ESG metric. A language model (Claude) decides each next step: it finds
-  <b>which metric</b> you mean, looks up <b>how it is calculated</b>, has the existing ESG system <b>compute it</b>,
-  and <b>explains</b> the result. It never produces numbers itself &mdash; every value comes from the ESG system.
-  Each step below shows the model's decision, its stated reason, and the part of the architecture it used.</p>
-  <p class="lead" id="config"></p>
+  <h1>ESG Portfolio Agent</h1>
+  <p class="lead">For portfolio managers and sustainability analysts who must report a fund's carbon footprint
+  (TCFD, SFDR). Give your holdings and ask a question in plain language. A language model (Claude) decides each
+  step: it finds the carbon-intensity metric in the ESG knowledge graph, has the ESG system compute it for each
+  holding, computes the portfolio's <b>weighted average carbon intensity (WACI)</b>, and, if you ask, proposes a
+  lower-carbon reweighting that a portfolio manager must approve. It never calculates numbers itself; every figure
+  comes from the ESG system or the portfolio service and is checked.</p>
+  <p class="lead small">Analysis only: no trades are placed. Demo data covers semiconductor companies.</p>
 </header>
-
-<section class="compare">
-  <div>
-    <h3>Without the agent (existing ESG system)</h3>
-    <ol>
-      <li>The analyst picks the company and year</li>
-      <li>The analyst browses categories and picks a metric</li>
-      <li>The analyst picks the calculation model</li>
-      <li>The analyst presses calculate and reads the number</li>
-    </ol>
-  </div>
-  <div>
-    <h3>With the agent</h3>
-    <ol>
-      <li>The analyst states the goal once</li>
-      <li>The model discovers the metrics and chooses one (through MCP)</li>
-      <li>The model finds the calculation model in the knowledge graph</li>
-      <li>The ESG service computes the value; the model explains it</li>
-    </ol>
-  </div>
-</section>
 
 <main>
   <div class="panel">
-    <label for="company">Company</label>
-    <input id="company" value="STMicroelectronics NV">
-    <label for="year">Year</label>
-    <input id="year" value="2023">
-    <label for="category">ESG category</label>
-    <select id="category">
-      <option>Greenhouse Gas Emissions</option>
-      <option>Water Management</option>
-      <option>Product Lifecycle Management</option>
-      <option>Workforce Health &amp; Safety</option>
-      <option>Material Sourcing</option>
-    </select>
-    <label for="metric">Metric</label>
-    <select id="metric"><option>loading…</option></select>
-    <div class="check"><input type="checkbox" id="explain" checked>
-      <span>Ask the agent to explain the result</span></div>
-    <button id="run">Run the agent</button>
+    <label>Portfolio holdings (weight %)</label>
+    <div id="rows"></div>
+    <button class="link" id="add">+ add holding</button>
+    <div class="small" id="total"></div>
+    <div class="two">
+      <div><label for="year">Year</label>
+        <select id="year"><option>2023</option><option>2022</option><option>2021</option></select></div>
+      <div><label for="cmp">Compare with</label>
+        <select id="cmp"><option value="">—</option><option>2022</option><option>2021</option><option>2023</option></select></div>
+    </div>
+    <label for="q">Question</label>
+    <textarea id="q">What is the carbon intensity of my portfolio, and which holdings drive it?</textarea>
+    <button id="run">Ask the agent</button>
 
     <div class="presets">
       <p>Try these</p>
-      <a data-p='{"metric":"GHGEmissionIntensity","explain":true}'>Named metric, with explanation</a>
-      <a data-p='{"metric":"GHGEmissionIntensity","explain":false}'>Same metric, no explanation</a>
-      <a data-p='{"metric":"","prefer":"calculation_model","explain":true}'>Let the agent choose the metric</a>
-      <a data-p='{"metric":"NonexistentMetric","explain":true}'>A metric that does not exist</a>
+      <a data-p="P1">Portfolio carbon intensity and its drivers</a>
+      <a data-p="P2">Has it improved since 2022?</a>
+      <a data-p="P3">A holding with missing data</a>
+      <a data-p="P4">Propose a lower-carbon reweighting</a>
+      <a data-p="P5">A question the data cannot answer</a>
     </div>
 
     <div class="legend">
       <b>Parts of the architecture</b><br>
-      <span class="chip" style="background:var(--L1)">L1</span> analyst interface<br>
-      <span class="chip" style="background:var(--L2)">L2</span> access gate<br>
+      <span class="chip" style="background:var(--L1)">L1</span> this page<br>
+      <span class="chip" style="background:var(--L2)">L2</span> access gate (sign-in, roles)<br>
       <span class="chip" style="background:var(--L3)">L3</span> the agent (decides)<br>
       <span class="chip" style="background:var(--L4)">L4</span> Claude model access<br>
       <span class="chip" style="background:var(--L5)">L5</span> ESG knowledge graph <span class="existing">existing</span><br>
-      <span class="chip" style="background:var(--L6)">L6</span> ESG computation <span class="existing">existing</span>
+      <span class="chip" style="background:var(--L6)">L6</span> ESG computation <span class="existing">existing</span>, portfolio service, approval gate
     </div>
   </div>
 
-  <div id="out"><p class="empty">Choose a request and press <b>Run the agent</b>.</p></div>
+  <div id="out"><p class="muted">Set up a portfolio and press <b>Ask the agent</b>. A run takes about 20–40 seconds.</p></div>
 </main>
 
 <script>
 const $ = (id) => document.getElementById(id);
 const CHIP = (r) => `<span class="chip" style="background:var(--${r})">${r}</span>`;
-let RESP = {};
-let TOKEN = null;
+const H = { "ngrok-skip-browser-warning": "1" };
+const TOKENS = {};
+let COMPANIES = [];
 
-async function signIn() {
-  const r = await fetch("/api/session", { method: "POST" });
-  TOKEN = (await r.json()).token;
-}
-
-async function loadMetrics() {
-  const sel = $("metric");
-  sel.innerHTML = "<option>loading…</option>";
-  try {
-    const r = await fetch(`/api/metrics?category=${encodeURIComponent($("category").value)}`);
-    const d = await r.json();
-    if (d.error) throw new Error(d.error);
-    sel.innerHTML =
-      `<option value="" data-prefer="calculation_model">Let the agent choose (a calculated metric)</option>` +
-      d.metrics.map(m => `<option value="${m.name}">${m.name} — ${m.calculation_method}</option>`).join("") +
-      `<option value="NonexistentMetric">A metric that does not exist</option>`;
-    sel.selectedIndex = Math.max(0, [...sel.options].findIndex(o => o.value === "GHGEmissionIntensity"));
-  } catch (e) {
-    sel.innerHTML = `<option value="GHGEmissionIntensity">GHGEmissionIntensity</option>`;
+async function call(url, opts = {}) {
+  let r;
+  for (let i = 0; i < 2; i++) {
+    try { r = await fetch(url, { ...opts, headers: { ...H, ...(opts.headers || {}) } }); break; }
+    catch (e) { if (i) throw new Error("Could not reach the agent service (network error). Please try again."); }
   }
+  const d = await r.json().catch(() => ({}));
+  if (!r.ok) throw new Error(d.detail ? (typeof d.detail === "string" ? d.detail : JSON.stringify(d.detail)) : r.statusText);
+  return d;
+}
+async function token(role) {
+  if (!TOKENS[role]) TOKENS[role] = (await call(`/api/session?role=${role}`, { method: "POST" })).token;
+  return TOKENS[role];
+}
+const esc = (s) => String(s ?? "").replace(/[&<>]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;" }[c]));
+const md = (s) => esc(s).replace(/\*\*(.+?)\*\*/g, "<b>$1</b>").replace(/\n/g, "<br>");
+const fmt = (x) => (x == null ? "—" : Number(x).toLocaleString(undefined, { maximumFractionDigits: 2 }));
+
+// ---------------- portfolio editor ----------------
+function addRow(company, weight) {
+  const div = document.createElement("div"); div.className = "row";
+  const opts = COMPANIES.map(c => `<option ${c.name === company ? "selected" : ""} value="${esc(c.name)}">${esc(c.name)}${c.covered ? "" : " (no revenue data)"}</option>`).join("");
+  div.innerHTML = `<select>${opts}</select><input type="number" min="0" max="100" step="0.5" value="${weight}"><button title="remove">×</button>`;
+  div.querySelector("button").onclick = () => { div.remove(); total(); };
+  div.querySelector("input").oninput = total;
+  $("rows").appendChild(div); total();
+}
+function holdings() {
+  return [...document.querySelectorAll("#rows .row")].map(r => ({
+    company: r.querySelector("select").value, weight_pct: parseFloat(r.querySelector("input").value || "0") }));
+}
+function total() {
+  const t = holdings().reduce((a, h) => a + h.weight_pct, 0);
+  $("total").innerHTML = `Total weight: <b style="color:${Math.abs(t - 100) < 0.5 ? "var(--ok)" : "var(--bad)"}">${t}%</b> (must be 100%)`;
+}
+function setPortfolio(list) { $("rows").innerHTML = ""; list.forEach(([c, w]) => addRow(c, w)); }
+
+const BASE = [["STMicroelectronics NV", 30], ["Infineon Technologies AG", 25], ["Micron Technology Inc", 25], ["NXP Semiconductors NV", 20]];
+const PRESETS = {
+  P1: { p: BASE, year: "2023", cmp: "", q: "What is the carbon intensity of my portfolio, and which holdings drive it?" },
+  P2: { p: BASE, year: "2023", cmp: "2022", q: "Has my portfolio's carbon intensity improved since 2022? What changed?" },
+  P3: { p: [["STMicroelectronics NV", 30], ["Infineon Technologies AG", 25], ["Micron Technology Inc", 25], ["Taiwan Semiconductor Manufacturing Co Ltd", 20]],
+        year: "2023", cmp: "", q: "What is the carbon intensity of my portfolio, and which holdings drive it?" },
+  P4: { p: BASE, year: "2023", cmp: "", q: "Propose a reweighting that reduces the portfolio's carbon intensity by at least 30%, keeping every holding at 10% or more." },
+  P5: { p: BASE, year: "2023", cmp: "", q: "Which of these stocks should I buy now, and what will their share prices be next quarter?" },
+};
+
+// ---------------- rendering ----------------
+const STATUS = { success: ["Answered", "var(--ok)"], pending_approval: ["Awaiting approval", "var(--warn)"],
+                 unsatisfiable: ["Could not answer", "var(--muted)"], failed: ["Failed", "var(--bad)"] };
+
+function exchange(x) {
+  return `<div class="ex">${CHIP(x.source)} <span class="arrow">→</span> ${CHIP(x.target)}
+    <span class="type">${x.type}</span> <span>${esc(x.text)}</span></div>`;
 }
 
-function exchange(e) {
-  const r = RESP[e.target] || [];
-  return `<div class="ex">${CHIP(e.source)}<span class="arrow">→</span>${CHIP(e.target)}
-    <span class="type">${e.type}</span><span>${e.text}</span>
-    ${r[2] === "existing" ? '<span class="existing">existing ESG system</span>' : ""}</div>`;
+function portfolioCard(p, title) {
+  if (!p || p.waci == null) return "";
+  const rows = (p.contributions || []).map(c => `<tr><td>${esc(c.company)}</td><td class="n">${fmt(c.weight_pct)}%</td>
+      <td class="n">${fmt(c.intensity)}</td><td class="n">${fmt(c.contribution)}</td>
+      <td><div class="bar"><i style="width:${c.share_of_waci_pct}%"></i></div></td><td class="n">${fmt(c.share_of_waci_pct)}%</td></tr>`).join("");
+  const miss = (p.not_covered || []).map(c => `<tr><td>${esc(c.company)}</td><td class="n">${fmt(c.weight_pct)}%</td>
+      <td colspan="4" class="err">not included: ${esc(c.reason)}</td></tr>`).join("");
+  const ch = p.change ? `<div class="muted">Change ${p.change.from_year} → ${p.change.to_year}:
+      <b>${fmt(p.change.from_waci)} → ${fmt(p.change.to_waci)}</b> (${p.change.change_pct > 0 ? "+" : ""}${fmt(p.change.change_pct)}%)</div>` : "";
+  return `<div class="card"><div class="muted">${title}</div>
+    <div class="big">${fmt(p.waci)} <span class="muted">${esc(p.unit)}</span></div>
+    <div class="muted">covers ${fmt(p.covered_weight_pct)}% of the portfolio by weight</div>${ch}
+    <table><tr><th>Holding</th><th class="n">Weight</th><th class="n">Intensity</th><th class="n">Contribution</th><th></th><th class="n">Share</th></tr>${rows}${miss}</table></div>`;
+}
+
+function proposalCard(pr) {
+  if (!pr) return "";
+  const rows = (pr.weight_changes || []).map(w => `<tr><td>${esc(w.company)}</td><td class="n">${fmt(w.from_pct)}%</td><td class="n">${fmt(w.to_pct)}%</td></tr>`).join("");
+  const pending = pr.status === "pending_approval";
+  return `<div class="card proposal" id="proposal"><b>Proposed reweighting</b>
+    <span class="badge" style="background:var(--warn)">${pending ? "needs portfolio manager approval" : esc(pr.status)}</span>
+    <div class="muted">WACI ${fmt(pr.waci_before)} → <b>${fmt(pr.waci_after)}</b> (${fmt(pr.change_pct)}%)</div>
+    <table><tr><th>Holding</th><th class="n">From</th><th class="n">To</th></tr>${rows}</table>
+    ${pending ? `<div style="margin-top:10px"><button onclick="decide('${pr.proposal_id}','approve')">Approve as portfolio manager</button>
+      <button class="reject" onclick="decide('${pr.proposal_id}','reject')">Reject</button>
+      <button class="link" onclick="decide('${pr.proposal_id}','approve','analyst')">Try approving as the analyst</button></div>` : ""}
+    <div id="decision"></div></div>`;
 }
 
 function render(d) {
-  RESP = d.responsibilities || {};
-  let html = "";
-  if (d.status === "success") {
-    const inputs = d.inputs ? Object.entries(d.inputs)
-      .map(([k, v]) => `${k.replaceAll("_", " ")} = ${Number(v).toLocaleString()}`).join(", ") : "";
-    html += `<div class="panel"><div class="answer"><div>
-        <div class="value">${d.value}</div><div class="unit">${d.unit || ""}</div></div>
-      <div class="facts"><b>${d.metric}</b> · ${d.framework || ""}<br>
-        Calculation: <b>${d.method}</b>${d.equation ? ` — ${d.equation}` : ""}<br>
-        ${inputs ? `Inputs: ${inputs}` : ""}
-        ${d.rationale ? `<br>Agent's choice: ${d.rationale}` : ""}</div></div>
-      ${d.explanation ? `<div class="explain"><b>Model's answer:</b> ${d.explanation}</div>` : ""}
-      ${d.grounding ? `<div class="facts" style="margin-top:6px">Number check: ${d.grounding.grounded
-        ? "every number in the answer came from the ESG system" :
-        "unsupported numbers: " + d.grounding.unsupported.join(", ")}</div>` : ""}</div>`;
-  } else {
-    html += `<div class="panel"><span class="stop">The agent stopped:</span> ${d.error || d.status}
-      ${d.rationale ? `<br><span class="facts">Agent's choice: ${d.rationale}</span>` : ""}</div>`;
-  }
+  const [label, color] = STATUS[d.status] || [d.status, "var(--muted)"];
+  let h = `<div class="card"><span class="badge" style="background:${color}">${label}</span>
+      ${d.grounding ? `<span class="muted" style="margin-left:8px">Number check: <b style="color:${d.grounding.grounded ? "var(--ok)" : "var(--bad)"}">${d.grounding.grounded ? "every number traced to the ESG system or portfolio service" : "unsupported: " + d.grounding.unsupported.join(", ")}</b>${d.grounding.revisions ? ` (draft revised once; it had derived ${d.grounding.flagged_in_draft.join(", ")})` : ""}</span>` : ""}
+      <div class="answer">${md(d.answer || d.error || "")}</div></div>`;
+  const years = Object.keys(d.portfolio_by_year || {}).sort().reverse();
+  years.forEach(y => h += portfolioCard(d.portfolio_by_year[y], `Portfolio carbon intensity (WACI), ${y}`));
+  h += proposalCard(d.proposal);
 
-  html += `<h2>What happened, step by step</h2>`;
-  html += `<div class="step"><div class="num">0</div><div class="body">
-      <div class="title">Request enters the system</div>
-      <div class="why">The access gate checks who is asking before the agent starts</div>
-      ${(d.entry || []).map(exchange).join("")}</div></div>`;
-  (d.steps || []).forEach((s, i) => {
-    html += `<div class="step"><div class="num">${i + 1}</div><div class="body">
-        <div class="title">${s.label}</div><div class="why">${s.why}</div>
-        ${s.exchanges.length ? s.exchanges.map(exchange).join("")
-          : '<div class="nointeract">Decided inside the agent; nothing sent to another part.</div>'}
-      </div></div>`;
+  h += `<h2>How the agent got there</h2>`;
+  h += `<div class="step"><div class="num">→</div><div class="body"><div class="title">Request admitted</div>${d.entry.map(exchange).join("")}</div></div>`;
+  d.steps.forEach((s, i) => {
+    h += `<div class="step"><div class="num">${i + 1}</div><div class="body"><div class="title">${esc(s.label)}</div>
+      ${["decide", "answer", "answer_flagged"].includes(s.action) ? `<div class="why">${esc(s.why).slice(0, 300)}</div>` : ""}
+      ${s.exchanges.map(exchange).join("")}</div></div>`;
   });
-  if ((d.exit || []).length) {
-    html += `<div class="step"><div class="num">✓</div><div class="body">
-        <div class="title">Answer returned</div>
-        <div class="why">The access gate checks the outgoing answer, then the analyst sees it</div>
-        ${d.exit.map(exchange).join("")}</div></div>`;
-  }
-  if (d.summary) {
-    html += `<h2>In architecture terms</h2><div class="summary">
-      <span><b>${d.summary.occurrences}</b> exchanges</span>
-      <span>interaction types: <b>${d.summary.types.join(", ")}</b></span>
-      <span>parts used: ${d.summary.responsibilities.map(CHIP).join(" ")}</span>
-      ${d.summary.model_calls != null ? `<span><b>${d.summary.model_calls}</b> model calls</span>` : ""}
-      <span>model: <b>${d.summary.model || "—"}</b></span>
-      <span>L5/L6 reached via: <b>${d.summary.mechanism}</b></span></div>`;
-  }
-  $("out").innerHTML = html;
+  h += `<div class="step"><div class="num">✓</div><div class="body"><div class="title">Answer returned</div>
+      <div class="why">The access gate checks the outgoing answer</div>${d.exit.map(exchange).join("")}</div></div>`;
+  const s = d.summary;
+  h += `<h2>In architecture terms</h2><div class="summary">
+      <span><b>${s.occurrences}</b> interaction occurrences</span>
+      <span>types: <b>${s.types.join(", ")}</b></span>
+      <span>parts used: ${s.responsibilities.map(CHIP).join(" ")}</span>
+      <span><b>${s.model_calls}</b> model calls (${esc(s.model)})</span>
+      <span>L5/L6 via <b>${esc(s.mechanism)}</b></span></div>`;
+  $("out").innerHTML = h;
 }
 
-async function run(preset) {
-  const btn = $("run"); btn.disabled = true; btn.textContent = "Running…";
-  const sel = $("metric");
-  const opt = sel.options[sel.selectedIndex];
-  const body = {
-    company: $("company").value, year: $("year").value,
-    category: $("category").value, explain: $("explain").checked,
-    metric: preset ? preset.metric : sel.value,
-  };
-  const prefer = preset ? preset.prefer : (opt && opt.dataset.prefer);
-  if (!body.metric && prefer) body.prefer_method = prefer;
+async function decide(pid, decision, role = "manager") {
+  const box = $("decision");
+  box.innerHTML = `<p class="muted">Sending decision…</p>`;
   try {
-    if (!TOKEN) await signIn();
-    const r = await fetch("/api/run", { method: "POST",
-      headers: { "Content-Type": "application/json", "Authorization": `Bearer ${TOKEN}` },
-      body: JSON.stringify(body) });
-    const d = await r.json();
-    if (!r.ok) throw new Error(d.detail || r.statusText);
-    render(d);
-  } catch (e) {
-    $("out").innerHTML = `<div class="panel err">${e}</div>`;
-  } finally { btn.disabled = false; btn.textContent = "Run the agent"; }
+    const d = await call(`/api/proposals/${pid}/${decision}`, { method: "POST",
+      headers: { "Authorization": `Bearer ${await token(role)}` } });
+    const r = d.result;
+    const ok = r.status === "approved" || r.status === "rejected";
+    box.innerHTML = `<p><b style="color:${ok ? "var(--ok)" : "var(--bad)"}">${esc(r.status)}</b>
+      ${esc(r.note || r.error || "")}${r.decided_by ? ` — by ${esc(r.decided_by)}` : ""}</p>
+      ${d.exchanges.map(exchange).join("")}`;
+    if (ok) document.querySelectorAll("#proposal button").forEach(b => b.disabled = true);
+  } catch (e) { box.innerHTML = `<p class="err">${esc(e.message)}</p>`; }
 }
 
-$("run").onclick = () => run();
-$("category").onchange = loadMetrics;
+async function run() {
+  const btn = $("run"); btn.disabled = true; btn.textContent = "Agent working… (20–40 s)";
+  $("out").innerHTML = `<p class="muted">The agent is working: looking up the metric, computing each holding, then the portfolio…</p>`;
+  const body = { holdings: holdings(), year: $("year").value, question: $("q").value };
+  if ($("cmp").value && $("cmp").value !== body.year) body.compare_year = $("cmp").value;
+  try {
+    render(await call("/api/run", { method: "POST",
+      headers: { "Content-Type": "application/json", "Authorization": `Bearer ${await token("analyst")}` },
+      body: JSON.stringify(body) }));
+  } catch (e) { $("out").innerHTML = `<div class="card err">${esc(e.message)}</div>`; }
+  finally { btn.disabled = false; btn.textContent = "Ask the agent"; }
+}
+
+$("run").onclick = run;
+$("add").onclick = () => addRow(COMPANIES[0].name, 10);
 document.querySelectorAll(".presets a").forEach(a => a.onclick = () => {
-  const p = JSON.parse(a.dataset.p);
-  $("category").value = "Greenhouse Gas Emissions";
-  $("explain").checked = p.explain;
-  run(p);
+  const p = PRESETS[a.dataset.p];
+  setPortfolio(p.p); $("year").value = p.year; $("cmp").value = p.cmp; $("q").value = p.q; run();
 });
-loadMetrics();
+(async () => {
+  const c = await call("/api/companies");
+  COMPANIES = c.covered.map(n => ({ name: n, covered: true })).concat(c.not_covered.map(n => ({ name: n, covered: false })));
+  setPortfolio(BASE);
+})();
 </script>
 </body>
 </html>

@@ -1,20 +1,23 @@
-"""Assembly of the instantiated responsibilities and the request path.
+"""Assembly of the instantiated responsibilities and the request paths.
 
-One function, `handle`, is the path every request takes, whether it arrives at
-the FastAPI service or from an experiment script:
+`handle` is the path every portfolio question takes, whether it arrives at the
+FastAPI service or from an experiment script:
 
     L1 -> L2  (T1)  request admission
     L2 -> L3  (T2)  authorized request + identity and trace context
     L3 <-> L4 (T3)  every model decision
     L3 <-> L5 (T4)  knowledge-graph retrieval, through MCP
-    L3 <-> L6 (T5)  metric computation, through MCP
-    L3 -> L1  (T1)  result, after the L2 egress check
+    L3 <-> L6 (T5)  metric computation and portfolio analytics, through MCP
+    L3 -> L1  (T1)  answer, after the L2 egress check
+
+`decide` is the path of a portfolio manager's approval decision on a proposed
+rebalancing: L1 -> L2 -> L3 -> L6 approval gate -> L3 -> L1.
 """
 
 import os
 from typing import Any, Dict, Optional
 
-from agentic.adapters.mcp_clients import McpCompute, McpKnowledge
+from agentic.adapters.mcp_clients import McpCompute, McpKnowledge, McpPortfolio
 from agentic.responsibilities.l2_protect import AccessControl
 from agentic.responsibilities.l3_coordinate import AgentRuntime
 from agentic.responsibilities.l4_infer import ModelAccess
@@ -22,7 +25,7 @@ from agentic.responsibilities.l6_act import ActionRuntime
 from agentic.trace.recorder import Trace
 
 MECHANISM = "MCP (streamable HTTP)"
-ENTITLEMENTS = ["esg.metric.compute"]
+DEFAULTS = {"industry": "semiconductors", "category": "Greenhouse Gas Emissions"}
 
 
 def knowledge() -> McpKnowledge:
@@ -32,39 +35,62 @@ def knowledge() -> McpKnowledge:
 
 
 def compute_backend() -> McpCompute:
-    """Execution backend of L6: the existing computation service, via MCP."""
+    """L6 backend: the existing computation service, via MCP."""
     return McpCompute(os.environ.get("MCP_COMPUTE_URL",
                                      "http://localhost:8102/mcp"))
 
 
-def build_agent(trace: Trace, ground=None, backend=None,
+def portfolio_backend() -> McpPortfolio:
+    """L6 backend: the portfolio analytics service, via MCP."""
+    return McpPortfolio(os.environ.get("MCP_PORTFOLIO_URL",
+                                       "http://localhost:8103/mcp"))
+
+
+def action_runtime(compute=None, portfolio=None) -> ActionRuntime:
+    return ActionRuntime(compute or compute_backend(),
+                         portfolio or portfolio_backend())
+
+
+def build_agent(trace: Trace, ground=None, act: Optional[ActionRuntime] = None,
                 infer: Optional[ModelAccess] = None) -> AgentRuntime:
-    """L3 wired to L4, L5 and L6; backends can be wrapped for probing."""
-    return AgentRuntime(ground or knowledge(),
-                        infer or ModelAccess(),
-                        ActionRuntime(backend or compute_backend()),
-                        trace)
+    """L3 wired to L4, L5 and L6; components can be wrapped for probing."""
+    return AgentRuntime(ground or knowledge(), infer or ModelAccess(),
+                        act or action_runtime(), trace)
 
 
-def handle(goal: Dict[str, Any], token: str, access: AccessControl,
-           trace: Trace, entitlements=ENTITLEMENTS) -> Dict[str, Any]:
-    """Run one request through L1 -> L2 -> L3 -> L1, recording each exchange.
+def handle(request: Dict[str, Any], token: str, access: AccessControl,
+           trace: Trace) -> Dict[str, Any]:
+    """Run one portfolio question through L1 -> L2 -> L3 -> L1.
 
     Raises PermissionError / ValueError when L2 refuses the request.
     """
+    goal = {**DEFAULTS, **request}
     trace.record("L1", "L2", "request admission", ttype="T1",
-                 company=goal.get("company"), year=goal.get("year"))
-    principal = access.admit(
-        token, {"company": goal.get("company"), "year": goal.get("year"),
-                "industry": goal.get("industry"),
-                "metric": goal.get("metric") or "any"},
-        entitlements)
+                 holdings=len(goal.get("holdings") or []),
+                 year=goal.get("year"))
+    principal = access.admit(token, goal)
     trace.record("L2", "L3", "authorized request + identity context",
                  ttype="T2", subject=principal["subject"],
-                 trace_id=principal["trace_id"])
+                 role=principal["role"], trace_id=principal["trace_id"])
 
     result = build_agent(trace).pursue(goal, principal)
 
-    trace.record("L3", "L1", "result and explanation", ttype="T1",
-                 value=result.get("value"), unit=result.get("unit"))
+    trace.record("L3", "L1", "answer", ttype="T1", status=result["status"],
+                 waci=(result.get("portfolio") or {}).get("waci"))
+    return access.egress(result)
+
+
+def decide(proposal_id: str, approve: bool, token: str,
+           access: AccessControl, trace: Trace) -> Dict[str, Any]:
+    """Route an approval decision through L1 -> L2 -> L3 -> L6 -> L3 -> L1."""
+    trace.record("L1", "L2", "approval decision", ttype="T1",
+                 proposal_id=proposal_id)
+    principal = access.admit(token, {"proposal_id": proposal_id})
+    trace.record("L2", "L3", "authorized request + identity context",
+                 ttype="T2", subject=principal["subject"],
+                 role=principal["role"], trace_id=principal["trace_id"])
+    agent = AgentRuntime(None, None, action_runtime(), trace)
+    result = agent.decide_proposal(proposal_id, approve, principal)
+    trace.record("L3", "L1", "decision outcome", ttype="T1",
+                 status=result["status"])
     return access.egress(result)

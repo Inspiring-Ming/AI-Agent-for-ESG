@@ -1,8 +1,9 @@
 #!/usr/bin/env python3
 """Recorded-execution figure (fig:case-runtime) of the instantiated architecture.
 
-A sequence diagram of the representative request, generated from
-output/runtime_trace.json. The reference-architecture figure shows the architecture's
+A sequence diagram of the worked example, generated from
+output/runtime_trace.json. Consecutive per-holding computations are drawn as
+one request row and one result row. The reference-architecture figure shows the architecture's
 structure; this figure shows behaviour: which responsibility exchanged what
 with which, in the order it happened, against the real enterprise system.
 
@@ -33,15 +34,15 @@ REQ, RET = "#1F4E9A", "#1E7A46"
 
 # lifeline order chosen to keep the common exchanges short
 LANES = [
-    ("L1", "Client & Experience", "analyst interface", False),
+    ("L1", "Client & Experience", "portfolio analyst page", False),
     ("L2", "Access, Identity &\nSafety Control", "access gate", False),
     ("L3", "Agent & Workflow\nOrchestration", "goal-directed agent", False),
     ("L5", "Enterprise Context\n& Knowledge", "ESG knowledge graph", True),
-    ("L6", "Tool & Action\nRuntime", "metric computation", True),
+    ("L6", "Tool & Action\nRuntime", "computation · portfolio", "mixed"),
     ("L4", "Model Access\n& Inference", "Claude model access", False),
 ]
 
-FW, FH = 10.5, 6.6
+FW, FH = 10.5, 7.4
 F_HEAD, F_SUB, F_MSG, F_NOTE = 9.4, 8.4, 8.4, 8.2
 
 
@@ -55,10 +56,11 @@ def _num(v):
 def describe(it):
     """Human-readable message text from a recorded interaction."""
     p, purpose = it["payload"], it["purpose"]
+    tool = p.get("tool")
     if purpose == "request admission":
-        return f"metric request: {p.get('company')}, {p.get('year')}"
+        return f"portfolio question: {p.get('holdings')} holdings, {p.get('year')}"
     if purpose.startswith("authorized request"):
-        return "authorized request + identity and trace context"
+        return f"authorized request + identity ({p.get('role')}) and trace context"
     if purpose == "capability discovery":
         return f"which metrics in “{p.get('category')}”? (CQ3)"
     if purpose == "discovered metrics":
@@ -68,18 +70,62 @@ def describe(it):
     if purpose == "grounded context":
         return (f"model {p.get('model')}, inputs, provenance "
                 f"(CQ1–CQ{p.get('competency_questions')})")
-    if purpose == "action intent":
-        return f"compute {p.get('metric')}"
-    if purpose == "observation":
-        return f"value {_num(p.get('value'))} + inputs and provenance"
+    if purpose == "action intent" and tool == "portfolio_intensity":
+        return f"portfolio carbon intensity (WACI), {p.get('year')}"
+    if purpose == "action intent" and tool == "propose_rebalance":
+        return "propose reweighting"
+    if purpose == "observation" and tool == "portfolio_intensity":
+        return f"WACI {_num(p.get('waci'))}, contributions, coverage"
+    if purpose == "observation" and tool == "propose_rebalance":
+        return f"{p.get('status')}"
     if purpose == "inference request":
-        return "what next? (goal + observations so far)"
+        return "what next? (question + observations so far)"
     if purpose == "inference result":
         return f"model decision (output contract: {p.get('contract')})"
-    if purpose == "result and explanation":
-        return (f"result {_num(p.get('value'))} t CO\u2082e per USD million "
-                "+ explanation")
+    if purpose == "answer":
+        return (f"answer: WACI {_num(p.get('waci'))} t CO\u2082e per USD million"
+                " + drivers + missing data")
     return purpose
+
+
+def _short(company):
+    return company.split(" Technologies")[0].split(" Semiconductor")[0] \
+        .split(" Technology")[0].replace("STMicroelectronics NV", "STMicro") \
+        .replace("Taiwan", "TSMC").split(" Inc")[0]
+
+
+def rows(msgs):
+    """Group consecutive per-holding computations into two rows."""
+    out, i = [], 0
+    while i < len(msgs):
+        it = msgs[i]
+        if it["payload"].get("tool") == "compute_metric" \
+                and it["purpose"] == "action intent":
+            j = i
+            while j < len(msgs) and msgs[j]["payload"].get("tool") == "compute_metric":
+                j += 1
+            grp = msgs[i:j]
+            intents = [m for m in grp if m["purpose"] == "action intent"]
+            obs = [m for m in grp if m["purpose"] == "observation"]
+            seqs = f"{grp[0]['seq']}–{grp[-1]['seq']}"
+            out.append({**intents[0], "label": f"{seqs}  T5   compute "
+                        f"{intents[0]['payload'].get('metric')} for "
+                        f"{len(intents)} holdings, {intents[0]['payload'].get('year')}",
+                        "ret": False})
+            vals = " · ".join(
+                f"{_short(m['payload']['company'])} {_num(m['payload']['value'])}"
+                if m["payload"].get("value") else
+                f"{_short(m['payload']['company'])}: no revenue data"
+                for m in obs)
+            out.append({**obs[0], "label": f"{seqs}  T5   {vals}", "ret": True})
+            i = j
+            continue
+        ret = it["purpose"] in ("discovered metrics", "grounded context",
+                                "observation", "inference result", "answer")
+        out.append({**it, "label": f"{it['seq']}  {it['ttype']}   "
+                    f"{describe(it)}", "ret": ret})
+        i += 1
+    return out
 
 
 def draw(out_dir):
@@ -106,9 +152,14 @@ def draw(out_dir):
         ax.add_patch(FancyBboxPatch(
             (x - w / 2, top), w, head_h,
             boxstyle="round,pad=0,rounding_size=0.06",
-            facecolor=OLD_FILL if existing else NEW_FILL,
+            facecolor=OLD_FILL if existing is True else NEW_FILL,
             edgecolor=OLD_EDGE if existing else NEW_EDGE, linewidth=1.3,
             zorder=3))
+        if existing == "mixed":      # part existing system, part instantiation
+            ax.add_patch(plt.Rectangle((x - w / 2 + 0.02, top + 0.02),
+                                       w / 2 - 0.02, head_h - 0.04,
+                                       facecolor=OLD_FILL, edgecolor="none",
+                                       zorder=3.5))
         ax.text(x, head_top - 0.14, rid, ha="center", va="center",
                 fontsize=F_HEAD + 0.6, fontweight="bold", color=INK, zorder=4)
         ax.text(x, head_top - 0.29, name, ha="center", va="top",
@@ -120,22 +171,19 @@ def draw(out_dir):
                 linestyle=(0, (3, 2.5)), zorder=1)
 
     # messages
+    msgs = rows(msgs)
     y = top - 0.30
     gap = (top - 0.30 - (bottom + 0.15)) / (len(msgs) - 1)
     for it in msgs:
         xs, xt = lane_x[it["source"]], lane_x[it["target"]]
-        ret = it["purpose"] in ("discovered metrics", "grounded context",
-                                "observation", "inference result",
-                                "result and explanation")
-        col = RET if ret else REQ
+        col = RET if it["ret"] else REQ
         ax.add_patch(FancyArrowPatch(
             (xs, y), (xt, y), arrowstyle="-|>", mutation_scale=10,
             color=col, linewidth=1.25,
-            linestyle=(0, (4, 2)) if ret else "-", shrinkA=0, shrinkB=0,
+            linestyle=(0, (4, 2)) if it["ret"] else "-", shrinkA=0, shrinkB=0,
             zorder=5))
         left = min(xs, xt)
-        ax.text(left + 0.08, y + 0.075,
-                f"{it['seq']}  {it['ttype']}   {describe(it)}",
+        ax.text(left + 0.08, y + 0.075, it["label"],
                 ha="left", va="bottom", fontsize=F_MSG, color=INK, zorder=6,
                 bbox=dict(boxstyle="square,pad=0.05", facecolor="white",
                           edgecolor="none", alpha=0.85))
@@ -168,8 +216,8 @@ def draw(out_dir):
             f"{tr['interaction_occurrences']} recorded interaction "
             f"occurrences realizing {len(tr['interaction_types_observed'])} "
             f"of {tr['interaction_types_defined']} interaction types; L5 and L6 "
-            "are reached through MCP. L2 applies its egress check before L1 "
-            "presents the result.",
+            "are reached through MCP. L6 lifeline: computation (existing) and "
+            "portfolio service (introduced).",
             ha="left", va="center", fontsize=F_NOTE, color=MUTED)
 
     os.makedirs(out_dir, exist_ok=True)

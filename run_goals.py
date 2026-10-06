@@ -1,15 +1,15 @@
 #!/usr/bin/env python3
 """Goal-variation experiment (Section V).
 
-Runs the same deployed request path against goals that differ in what they
-require, each several times, and records for every execution the action
-sequence the agent chose, the interaction occurrences produced, the
+Runs the same deployed request path against portfolio questions that differ in
+what they require, each several times, and records for every execution the
+action sequence the agent chose, the interaction occurrences produced, the
 interaction types realized, and whether the answer passed the number check.
 
-If L0-L9 are responsibility boundaries rather than a fixed pipeline, goals that
-require different things should produce different action sequences and type
-sets with the same components. Because the planner is a language model, each
-goal is repeated to measure whether its path is consistent.
+If L0-L9 are responsibility boundaries rather than a fixed pipeline, questions
+that require different things should produce different action sequences with
+the same components. Because the planner is a language model, each question is
+repeated to measure whether its path is consistent.
 
 Run (inside the Compose stack):  python run_goals.py [--repeats 3]
 """
@@ -25,26 +25,8 @@ sys.path.insert(0, HERE)
 from agentic import system                                         # noqa: E402
 from agentic.adapters.esg_system import EnterpriseSystemUnavailable  # noqa: E402
 from agentic.responsibilities.l2_protect import AccessControl      # noqa: E402
+from agentic.scenarios import GOALS                                # noqa: E402
 from agentic.trace.recorder import Trace, T_TYPES                  # noqa: E402
-
-BASE = {"company": "STMicroelectronics NV", "year": "2023",
-        "industry": "semiconductors", "category": "Greenhouse Gas Emissions"}
-
-GOALS = [
-    ("G1", "named calculated metric, explanation requested",
-     {"metric": "GHGEmissionIntensity", "explain": True}),
-    ("G2", "same metric, result only",
-     {"metric": "GHGEmissionIntensity", "explain": False}),
-    ("G3", "named measured metric, explanation requested",
-     {"metric": "GrossGlobalScope1Emissions", "explain": True}),
-    ("G4", "no metric named; one requiring a calculation model",
-     {"prefer_method": "calculation_model", "explain": True}),
-    ("G5", "two named metrics, one calculated and one measured",
-     {"metrics": ["GHGEmissionIntensity", "GrossGlobalScope1Emissions"],
-      "explain": True}),
-    ("G6", "metric the category does not contain",
-     {"metric": "NonexistentMetric", "explain": True}),
-]
 
 
 def main() -> int:
@@ -54,13 +36,14 @@ def main() -> int:
 
     access = AccessControl(rate_limit=1000)
     rows = []
-    for gid, desc, extra in GOALS:
+    for gid, desc, request in GOALS:
         for rep in range(1, args.repeats + 1):
             trace = Trace(gid)
             result = system.handle(
-                {**BASE, **extra}, access.issue_token("analyst@enterprise.example"),
+                request, access.issue_token("analyst@enterprise.example"),
                 access, trace)
             types = trace.occurrences_by_type()
+            pf = result.get("portfolio") or {}
             row = {"id": gid, "repeat": rep, "description": desc,
                    "status": result["status"],
                    "actions": [p["action"] for p in result.get("plan", [])],
@@ -68,15 +51,24 @@ def main() -> int:
                    "types_realized": sorted(types),
                    "occurrences_by_type": types,
                    "responsibilities": trace.responsibilities_touched(),
-                   "values": result.get("values"),
+                   "waci": pf.get("waci"),
+                   "covered_weight_pct": pf.get("covered_weight_pct"),
+                   "change": pf.get("change"),
+                   "proposal": (result.get("proposal") or {}).get("status"),
                    "model_calls": result.get("model_calls"),
                    "l6_invocations": result.get("l6_invocations"),
                    "grounded": result["grounding"]["grounded"],
+                   "unsupported": result["grounding"]["unsupported"],
+                   "revised": result["grounding"]["revisions"],
+                   "flagged_in_draft": result["grounding"]["flagged_in_draft"],
                    "answer": result.get("answer")}
             rows.append(row)
-            print(f"{gid}#{rep} {row['status']:<13} occ={row['occurrences']:<3}"
-                  f" {row['types_realized']} {' > '.join(row['actions'])}"
-                  f"  values={row['values']} grounded={row['grounded']}")
+            print(f"{gid}#{rep} {row['status']:<16} occ={row['occurrences']:<3}"
+                  f" {row['types_realized']} L6={row['l6_invocations']}"
+                  f" model={row['model_calls']} waci={row['waci']}"
+                  f" proposal={row['proposal']} grounded={row['grounded']}"
+                  f" revised={row['revised']} {row['flagged_in_draft']}")
+            print("      " + " > ".join(row["actions"]))
 
     per_goal = {}
     for r in rows:
@@ -102,6 +94,7 @@ def main() -> int:
                "distinct_type_sets":
                    len({tuple(r["types_realized"]) for r in rows}),
                "all_grounded": all(r["grounded"] for r in rows),
+               "drafts_revised": sum(1 for r in rows if r["revised"]),
                "per_goal": consistency}
 
     print("\n" + "=" * 76)

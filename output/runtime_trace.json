@@ -1,6 +1,6 @@
 {
-  "scenario": "ESG greenhouse-gas emissions intensity request",
-  "interaction_occurrences": 17,
+  "scenario": "ESG portfolio carbon-intensity question",
+  "interaction_occurrences": 27,
   "interaction_types_defined": 8,
   "interaction_types_observed": [
     "T1",
@@ -12,9 +12,9 @@
   "occurrences_by_type": {
     "T1": 2,
     "T2": 1,
-    "T3": 8,
+    "T3": 10,
     "T4": 4,
-    "T5": 2
+    "T5": 10
   },
   "responsibilities_touched": [
     "L1",
@@ -32,7 +32,7 @@
       "purpose": "request admission",
       "ttype": "T1",
       "payload": {
-        "company": "STMicroelectronics NV",
+        "holdings": 4,
         "year": "2023"
       },
       "elapsed_ms": 0.0
@@ -45,7 +45,8 @@
       "ttype": "T2",
       "payload": {
         "subject": "analyst@enterprise.example",
-        "trace_id": "ff51aedc3f5f"
+        "role": "analyst",
+        "trace_id": "4583dff24140"
       },
       "elapsed_ms": 0.1
     },
@@ -58,7 +59,7 @@
       "payload": {
         "provider": "claude-opus-5-5"
       },
-      "elapsed_ms": 261.3
+      "elapsed_ms": 281.8
     },
     {
       "seq": 4,
@@ -69,7 +70,7 @@
       "payload": {
         "contract": "success"
       },
-      "elapsed_ms": 2967.5
+      "elapsed_ms": 2823.8
     },
     {
       "seq": 5,
@@ -79,9 +80,9 @@
       "ttype": "T4",
       "payload": {
         "category": "Greenhouse Gas Emissions",
-        "trace_id": "ff51aedc3f5f"
+        "trace_id": "4583dff24140"
       },
-      "elapsed_ms": 2967.5
+      "elapsed_ms": 2823.8
     },
     {
       "seq": 6,
@@ -92,7 +93,7 @@
       "payload": {
         "count": 4
       },
-      "elapsed_ms": 3155.5
+      "elapsed_ms": 3009.3
     },
     {
       "seq": 7,
@@ -103,7 +104,7 @@
       "payload": {
         "provider": "claude-opus-5-5"
       },
-      "elapsed_ms": 3155.6
+      "elapsed_ms": 3009.4
     },
     {
       "seq": 8,
@@ -114,7 +115,7 @@
       "payload": {
         "contract": "success"
       },
-      "elapsed_ms": 7007.5
+      "elapsed_ms": 5179.1
     },
     {
       "seq": 9,
@@ -124,9 +125,9 @@
       "ttype": "T4",
       "payload": {
         "metric": "GHGEmissionIntensity",
-        "trace_id": "ff51aedc3f5f"
+        "trace_id": "4583dff24140"
       },
-      "elapsed_ms": 7007.5
+      "elapsed_ms": 5179.1
     },
     {
       "seq": 10,
@@ -139,7 +140,7 @@
         "model": "GHGEmissionIntensityModel",
         "competency_questions": 5
       },
-      "elapsed_ms": 7398.1
+      "elapsed_ms": 5603.4
     },
     {
       "seq": 11,
@@ -150,7 +151,7 @@
       "payload": {
         "provider": "claude-opus-5-5"
       },
-      "elapsed_ms": 7398.1
+      "elapsed_ms": 5603.4
     },
     {
       "seq": 12,
@@ -161,7 +162,7 @@
       "payload": {
         "contract": "success"
       },
-      "elapsed_ms": 9586.6
+      "elapsed_ms": 10211.2
     },
     {
       "seq": 13,
@@ -170,9 +171,12 @@
       "purpose": "action intent",
       "ttype": "T5",
       "payload": {
+        "tool": "compute_metric",
+        "company": "STMicroelectronics NV",
+        "year": "2023",
         "metric": "GHGEmissionIntensity"
       },
-      "elapsed_ms": 9586.6
+      "elapsed_ms": 10211.3
     },
     {
       "seq": 14,
@@ -181,13 +185,98 @@
       "purpose": "observation",
       "ttype": "T5",
       "payload": {
+        "tool": "compute_metric",
+        "company": "STMicroelectronics NV",
         "status": "success",
         "value": "45.4703"
       },
-      "elapsed_ms": 9850.4
+      "elapsed_ms": 10538.0
     },
     {
       "seq": 15,
+      "source": "L3",
+      "target": "L6",
+      "purpose": "action intent",
+      "ttype": "T5",
+      "payload": {
+        "tool": "compute_metric",
+        "company": "Infineon Technologies AG",
+        "year": "2023",
+        "metric": "GHGEmissionIntensity"
+      },
+      "elapsed_ms": 10538.0
+    },
+    {
+      "seq": 16,
+      "source": "L6",
+      "target": "L3",
+      "purpose": "observation",
+      "ttype": "T5",
+      "payload": {
+        "tool": "compute_metric",
+        "company": "Infineon Technologies AG",
+        "status": "success",
+        "value": "28.9938"
+      },
+      "elapsed_ms": 10763.3
+    },
+    {
+      "seq": 17,
+      "source": "L3",
+      "target": "L6",
+      "purpose": "action intent",
+      "ttype": "T5",
+      "payload": {
+        "tool": "compute_metric",
+        "company": "Micron Technology Inc",
+        "year": "2023",
+        "metric": "GHGEmissionIntensity"
+      },
+      "elapsed_ms": 10763.4
+    },
+    {
+      "seq": 18,
+      "source": "L6",
+      "target": "L3",
+      "purpose": "observation",
+      "ttype": "T5",
+      "payload": {
+        "tool": "compute_metric",
+        "company": "Micron Technology Inc",
+        "status": "success",
+        "value": "439.9378"
+      },
+      "elapsed_ms": 10992.3
+    },
+    {
+      "seq": 19,
+      "source": "L3",
+      "target": "L6",
+      "purpose": "action intent",
+      "ttype": "T5",
+      "payload": {
+        "tool": "compute_metric",
+        "company": "Taiwan Semiconductor Manufacturing Co Ltd",
+        "year": "2023",
+        "metric": "GHGEmissionIntensity"
+      },
+      "elapsed_ms": 10992.3
+    },
+    {
+      "seq": 20,
+      "source": "L6",
+      "target": "L3",
+      "purpose": "observation",
+      "ttype": "T5",
+      "payload": {
+        "tool": "compute_metric",
+        "company": "Taiwan Semiconductor Manufacturing Co Ltd",
+        "status": "error"
+      },
+      "elapsed_ms": 11197.5
+    },
+    {
+      "seq": 21,
       "source": "L3",
       "target": "L4",
       "purpose": "inference request",
@@ -195,10 +284,10 @@
       "payload": {
         "provider": "claude-opus-5-5"
       },
-      "elapsed_ms": 9850.4
+      "elapsed_ms": 11197.6
     },
     {
-      "seq": 16,
+      "seq": 22,
       "source": "L4",
       "target": "L3",
       "purpose": "inference result",
@@ -206,19 +295,66 @@
       "payload": {
         "contract": "success"
       },
-      "elapsed_ms": 12395.2
+      "elapsed_ms": 13438.4
     },
     {
-      "seq": 17,
+      "seq": 23,
+      "source": "L3",
+      "target": "L6",
+      "purpose": "action intent",
+      "ttype": "T5",
+      "payload": {
+        "tool": "portfolio_intensity",
+        "year": "2023"
+      },
+      "elapsed_ms": 13439.1
+    },
+    {
+      "seq": 24,
+      "source": "L6",
+      "target": "L3",
+      "purpose": "observation",
+      "ttype": "T5",
+      "payload": {
+        "tool": "portfolio_intensity",
+        "status": "success",
+        "waci": 163.59
+      },
+      "elapsed_ms": 13518.0
+    },
+    {
+      "seq": 25,
+      "source": "L3",
+      "target": "L4",
+      "purpose": "inference request",
+      "ttype": "T3",
+      "payload": {
+        "provider": "claude-opus-5-5"
+      },
+      "elapsed_ms": 13518.0
+    },
+    {
+      "seq": 26,
+      "source": "L4",
+      "target": "L3",
+      "purpose": "inference result",
+      "ttype": "T3",
+      "payload": {
+        "contract": "success"
+      },
+      "elapsed_ms": 18211.4
+    },
+    {
+      "seq": 27,
       "source": "L3",
       "target": "L1",
-      "purpose": "result and explanation",
+      "purpose": "answer",
       "ttype": "T1",
       "payload": {
-        "value": "45.4703",
-        "unit": "tons CO2e per million USD"
+        "status": "success",
+        "waci": 163.59
       },
-      "elapsed_ms": 12395.5
+      "elapsed_ms": 18212.1
     }
   ]
 }

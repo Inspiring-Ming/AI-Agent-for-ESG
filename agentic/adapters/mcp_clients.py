@@ -1,10 +1,7 @@
 """MCP clients for the L5 and L6 servers.
 
-Drop-in replacements for the HTTP/in-process adapters: they expose the same
-methods the coordinating responsibility already uses, so switching the
-realization mechanism to MCP requires no change in L3. This is the
-responsibility/mechanism separation the paper argues for, exercised with a
-standard interoperability protocol.
+The agent reaches the existing system's knowledge graph (L5) and computation
+service (L6), and the portfolio service (L6), only through these clients.
 """
 
 import asyncio
@@ -68,3 +65,23 @@ class McpCompute:
         return _call(self.url, "compute_metric",
                      {"industry": industry, "company": company,
                       "year": str(year), "metric": metrics[0]})
+
+
+class McpPortfolio:
+    """Portfolio analytics backend for the L6 action runtime, via MCP."""
+
+    mechanism = "MCP (streamable HTTP)"
+
+    def __init__(self, url: str):
+        self.url = url
+
+    def portfolio_intensity(self, holdings, year, previous=None):
+        args = {"holdings": holdings, "year": str(year)}
+        if previous:
+            args["previous"] = previous
+        return _call(self.url, "portfolio_intensity", args)
+
+    def evaluate_rebalance(self, holdings, target_weights, year):
+        return _call(self.url, "evaluate_rebalance",
+                     {"holdings": holdings, "target_weights": target_weights,
+                      "year": str(year)})
