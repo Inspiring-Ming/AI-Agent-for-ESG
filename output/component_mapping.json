@@ -1,58 +1,48 @@
 {
   "scenario": {
     "company": "STMicroelectronics NV",
-    "metric": "GHGEmissionIntensity",
     "year": "2023",
     "industry": "semiconductors",
-    "category": "Greenhouse Gas Emissions"
+    "category": "Greenhouse Gas Emissions",
+    "metric": "GHGEmissionIntensity",
+    "explain": true
   },
-  "mechanism": "deployed service API (HTTP/REST)",
-  "source_system": {
-    "repository": "https://github.com/Inspiring-Ming/ESG-Metric-System",
-    "deployment": "https://esgalaxy.com.ngrok.dev"
-  },
+  "mechanism": "MCP (streamable HTTP)",
   "mapping": [
     {
-      "component": "Analyst interface",
       "responsibility": "L1",
-      "verb": "Interact",
-      "origin": "case study (mirrors ESG web interface)"
+      "component": "FastAPI service and analyst page",
+      "origin": "this package"
     },
     {
-      "component": "Access gate: signed session, validation, rate limit",
       "responsibility": "L2",
-      "verb": "Protect",
-      "origin": "case study (models the authors' ESG demo access gate)"
+      "component": "Access gate: signed session token, request validation, rate limit, egress check",
+      "origin": "this package"
     },
     {
-      "component": "Agent runtime / orchestrator",
       "responsibility": "L3",
-      "verb": "Coordinate",
-      "origin": "case study (occupies the model-selection and session seam of the existing system)"
+      "component": "Agent runtime: model-driven tool-use loop with guardrails",
+      "origin": "this package"
     },
     {
-      "component": "Model access and explanation provider",
       "responsibility": "L4",
-      "verb": "Infer",
-      "origin": "case study"
+      "component": "Model access: Claude, output-contract validation, server-side fallback",
+      "origin": "this package"
     },
     {
-      "component": "ESG Metric Knowledge Graph (RDF) via CQ1\u2013CQ7",
       "responsibility": "L5",
-      "verb": "Ground",
-      "origin": "existing ESG Metric System"
+      "component": "ESG knowledge graph (RDF, competency questions) behind an MCP server",
+      "origin": "existing ESG system"
     },
     {
-      "component": "Metric-computation service (/api/CSservice/calculate)",
       "responsibility": "L6",
-      "verb": "Act",
-      "origin": "existing ESG Metric System"
+      "component": "Action runtime (entitlement check) + metric-computation service behind an MCP server",
+      "origin": "existing ESG system"
     },
     {
-      "component": "Deployed service platform (container, gunicorn, health check)",
       "responsibility": "L8",
-      "verb": "Operate",
-      "origin": "existing ESG Metric System deployment"
+      "component": "Docker Compose deployment of all services",
+      "origin": "this package"
     }
   ]
 }

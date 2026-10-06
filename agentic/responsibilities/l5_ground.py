@@ -2,7 +2,8 @@
 
 Enterprise grounding for this case is ontology-driven traversal of the ESG
 Metric Knowledge Graph. The knowledge graph is the enterprise context store;
-the CQ1-CQ7 competency questions are its retrieval interface.
+the competency questions CQ1-CQ5 are its retrieval interface (CQ6-CQ7
+are resolved inside the existing computation service).
 
 The traversal realises the ontology relationship chain
 
@@ -50,14 +51,9 @@ class EnterpriseKnowledgeGraph:
         return self._kg.frameworks(industry)
 
     def categories_for_framework(self, industry: str,
-                                 framework: str) -> Dict[str, Any]:
+                                 framework_id: str) -> Dict[str, Any]:
         self._cq("categories")
-        return self._kg.categories(industry, framework)
-
-    def metrics_for_category(self, industry: str,
-                             category: str) -> Dict[str, Any]:
-        self._cq("metrics")
-        return self._kg.metrics(industry, category)
+        return self._kg.categories(industry, framework_id)
 
     def metrics_in_category(self, industry: str, category: str):
         """Discovery (CQ3): which metrics the category contains.
@@ -92,19 +88,20 @@ class EnterpriseKnowledgeGraph:
         # CQ1/CQ2: locate the metric within its framework and category
         fw = self.frameworks_for_industry(industry)
         framework = fw.get("framework")
-
-        self._cq("categories")
+        cats = self.categories_for_framework(
+            industry, fw.get("framework_id")).get("categories", [])
 
         # CQ3: the metric as classified by the knowledge graph
         self._cq("metrics")
         catalogue = self._kg.metrics(industry, category)
         definition = self._find(catalogue.get("metrics", []), metric)
 
-        # CQ4/CQ5/CQ6: calculation model, its inputs, and its implementation
+        # CQ4: calculation method; CQ5: the model's inputs (calculated metrics
+        # only). CQ6/CQ7 are resolved inside the computation service (L6).
         self._cq("method")
         models = self._kg.models(industry, metric)
-        self._cq("inputs")
-        self._cq("implementation")
+        if models.get("measurement_method") == "calculation_model":
+            self._cq("inputs")
 
         model = (models.get("models") or [None])[0]
 
@@ -113,6 +110,7 @@ class EnterpriseKnowledgeGraph:
             "industry": industry,
             "framework": framework,
             "category": category,
+            "category_in_framework": category in cats,
             "definition": definition,
             "measurement_method": models.get("measurement_method"),
             "calculation_model": (model or {}).get("model_name"),

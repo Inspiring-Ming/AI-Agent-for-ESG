@@ -47,7 +47,7 @@
   .step .body { background:var(--card); border:1px solid var(--line); border-radius:10px; padding:10px 12px; }
   .step .title { font-weight:700; }
   .why { color:var(--muted); font-size:13px; margin:2px 0 6px; }
-  .why::before { content:"Agent's reason: "; font-weight:600; }
+  .why::before { content:"Reason: "; font-weight:600; }
   .ex { display:flex; gap:8px; align-items:center; font-size:13.5px; padding:4px 0; border-top:1px dashed var(--line); flex-wrap:wrap; }
   .ex:first-of-type { border-top:0; }
   .chip { padding:1px 7px; border-radius:6px; color:#fff; font-size:12px; font-weight:700; white-space:nowrap; }
@@ -65,9 +65,11 @@
 <body>
 <header>
   <h1>ESG Agent: what it does</h1>
-  <p class="lead">You ask for an ESG metric. The agent works out <b>which metric</b> you mean,
-  <b>how it is calculated</b>, has the existing ESG system <b>compute it</b>, and <b>explains</b> the result.
-  Each step below shows the agent's decision and the part of the architecture it used.</p>
+  <p class="lead">You ask for an ESG metric. A language model (Claude) decides each next step: it finds
+  <b>which metric</b> you mean, looks up <b>how it is calculated</b>, has the existing ESG system <b>compute it</b>,
+  and <b>explains</b> the result. It never produces numbers itself &mdash; every value comes from the ESG system.
+  Each step below shows the model's decision, its stated reason, and the part of the architecture it used.</p>
+  <p class="lead" id="config"></p>
 </header>
 
 <section class="compare">
@@ -84,9 +86,9 @@
     <h3>With the agent</h3>
     <ol>
       <li>The analyst states the goal once</li>
-      <li>The agent discovers the metrics and chooses one</li>
-      <li>The agent finds the calculation model in the knowledge graph</li>
-      <li>The agent has the value computed and explains it</li>
+      <li>The model discovers the metrics and chooses one (through MCP)</li>
+      <li>The model finds the calculation model in the knowledge graph</li>
+      <li>The ESG service computes the value; the model explains it</li>
     </ol>
   </div>
 </section>
@@ -124,7 +126,7 @@
       <span class="chip" style="background:var(--L1)">L1</span> analyst interface<br>
       <span class="chip" style="background:var(--L2)">L2</span> access gate<br>
       <span class="chip" style="background:var(--L3)">L3</span> the agent (decides)<br>
-      <span class="chip" style="background:var(--L4)">L4</span> explanation provider<br>
+      <span class="chip" style="background:var(--L4)">L4</span> Claude model access<br>
       <span class="chip" style="background:var(--L5)">L5</span> ESG knowledge graph <span class="existing">existing</span><br>
       <span class="chip" style="background:var(--L6)">L6</span> ESG computation <span class="existing">existing</span>
     </div>
@@ -137,6 +139,12 @@
 const $ = (id) => document.getElementById(id);
 const CHIP = (r) => `<span class="chip" style="background:var(--${r})">${r}</span>`;
 let RESP = {};
+let TOKEN = null;
+
+async function signIn() {
+  const r = await fetch("/api/session", { method: "POST" });
+  TOKEN = (await r.json()).token;
+}
 
 async function loadMetrics() {
   const sel = $("metric");
@@ -174,7 +182,10 @@ function render(d) {
         Calculation: <b>${d.method}</b>${d.equation ? ` — ${d.equation}` : ""}<br>
         ${inputs ? `Inputs: ${inputs}` : ""}
         ${d.rationale ? `<br>Agent's choice: ${d.rationale}` : ""}</div></div>
-      ${d.explanation ? `<div class="explain"><b>Explanation:</b> ${d.explanation}</div>` : ""}</div>`;
+      ${d.explanation ? `<div class="explain"><b>Model's answer:</b> ${d.explanation}</div>` : ""}
+      ${d.grounding ? `<div class="facts" style="margin-top:6px">Number check: ${d.grounding.grounded
+        ? "every number in the answer came from the ESG system" :
+        "unsupported numbers: " + d.grounding.unsupported.join(", ")}</div>` : ""}</div>`;
   } else {
     html += `<div class="panel"><span class="stop">The agent stopped:</span> ${d.error || d.status}
       ${d.rationale ? `<br><span class="facts">Agent's choice: ${d.rationale}</span>` : ""}</div>`;
@@ -202,7 +213,10 @@ function render(d) {
     html += `<h2>In architecture terms</h2><div class="summary">
       <span><b>${d.summary.occurrences}</b> exchanges</span>
       <span>interaction types: <b>${d.summary.types.join(", ")}</b></span>
-      <span>parts used: ${d.summary.responsibilities.map(CHIP).join(" ")}</span></div>`;
+      <span>parts used: ${d.summary.responsibilities.map(CHIP).join(" ")}</span>
+      ${d.summary.model_calls != null ? `<span><b>${d.summary.model_calls}</b> model calls</span>` : ""}
+      <span>model: <b>${d.summary.model || "—"}</b></span>
+      <span>L5/L6 reached via: <b>${d.summary.mechanism}</b></span></div>`;
   }
   $("out").innerHTML = html;
 }
@@ -219,9 +233,13 @@ async function run(preset) {
   const prefer = preset ? preset.prefer : (opt && opt.dataset.prefer);
   if (!body.metric && prefer) body.prefer_method = prefer;
   try {
+    if (!TOKEN) await signIn();
     const r = await fetch("/api/run", { method: "POST",
-      headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
-    render(await r.json());
+      headers: { "Content-Type": "application/json", "Authorization": `Bearer ${TOKEN}` },
+      body: JSON.stringify(body) });
+    const d = await r.json();
+    if (!r.ok) throw new Error(d.detail || r.statusText);
+    render(d);
   } catch (e) {
     $("out").innerHTML = `<div class="panel err">${e}</div>`;
   } finally { btn.disabled = false; btn.textContent = "Run the agent"; }

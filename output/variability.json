@@ -3,44 +3,38 @@
     {
       "capability": "Asynchronous / event-driven execution",
       "responsibility": "L7",
-      "instantiated": false,
       "condition": "workload requires decoupling or long-running execution",
-      "reason": "the metric request completes through direct synchronous service interaction; report generation would introduce it"
+      "reason": "the request completes through direct synchronous calls"
     },
     {
       "capability": "Multi-agent collaboration",
       "responsibility": "L3",
-      "instantiated": false,
       "condition": "execution involves multiple collaborating agents",
-      "reason": "a single coordinating agent is sufficient for the scenario"
+      "reason": "a single coordinating agent is sufficient"
     },
     {
-      "capability": "Human approval gate",
+      "capability": "Action-policy or approval gate",
       "responsibility": "L6",
-      "instantiated": false,
       "condition": "action is consequential and governance requires approval",
       "reason": "metric computation is a bounded analytical read"
     },
     {
-      "capability": "Execution isolation / sandboxing",
+      "capability": "Execution isolation",
       "responsibility": "L6",
-      "instantiated": false,
-      "condition": "risk or execution environment requires isolation",
+      "condition": "untrusted or high-risk execution",
       "reason": "the invoked capability is a trusted first-party service"
     },
     {
-      "capability": "Persistent memory across executions",
+      "capability": "Persistent cross-execution memory",
       "responsibility": "L5",
-      "instantiated": false,
       "condition": "task requires recall across separate executions",
-      "reason": "the scenario is a single stateless request"
+      "reason": "each request is independent"
     },
     {
       "capability": "Evaluation and observability",
       "responsibility": "L9",
-      "instantiated": false,
       "condition": "deployed operation requires telemetry and evaluation",
-      "reason": "not exercised by a single traced execution"
+      "reason": "evidence is recorded per request but not correlated by a separate L9 service"
     }
   ]
 }

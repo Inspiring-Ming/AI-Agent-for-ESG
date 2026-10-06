@@ -1,111 +1,64 @@
 """L4 -- Model Access & Inference (Infer).
 
-Provides controlled and replaceable access to the models used during agent
-execution. Two interchangeable providers are supplied to demonstrate the
-replaceability the responsibility is defined by (Section IV-C):
+Every model call made on behalf of L3 passes through here, so model choice,
+request shaping, refusal handling, and output-contract validation are owned by
+L4 rather than by the coordinator.
 
-  * DeterministicProvider -- template-based, no network, used by default so the
-    case study is reproducible and runs without credentials.
-  * ClaudeProvider        -- calls the Anthropic Messages API when a key is
-                             present.
+Output contract: the response must either request one or more *registered*
+tools or end its turn with text. Refusals, truncation, and calls to
+unregistered tools are contract violations, which L3 treats as failures.
 
-Boundary: validation performed here concerns whether an inference result can be
-consumed by the application (output contract). Whether information may leave
-the controlled system boundary remains with L2.
+Boundary: validation here concerns whether an inference result can be consumed
+by the application. Whether information may leave the controlled system
+boundary remains with L2.
 """
 
 import os
-from typing import Any, Dict, Optional, Protocol
-
-
-class InferenceProvider(Protocol):
-    name: str
-
-    def complete(self, prompt: str, context: Dict[str, Any]) -> str: ...
-
-
-class DeterministicProvider:
-    """Template-based explanation generator.
-
-    Produces the natural-language explanation from the grounded context and the
-    computed result, with no model call, so the trace is byte-reproducible.
-    """
-
-    name = "deterministic-template"
-
-    def complete(self, prompt: str, context: Dict[str, Any]) -> str:
-        ctx = context.get("metric_context", {})
-        res = context.get("computation", {})
-        prov = res.get("provenance", {})
-        inputs = prov.get("inputs", {}) or {}
-        parts = [
-            f"{ctx.get('metric')} for {context.get('company')} in "
-            f"{context.get('year')} is {res.get('display_value')} "
-            f"{res.get('unit') or ctx.get('unit') or ''}".strip() + ".",
-        ]
-        if prov.get("equation"):
-            parts.append(f"It is computed as {prov['equation']}.")
-        if inputs:
-            vals = ", ".join(f"{k} = {v:,.0f}" if isinstance(v, (int, float))
-                             else f"{k} = {v}" for k, v in inputs.items())
-            parts.append(f"Input values: {vals}.")
-        if prov.get("model"):
-            parts.append(f"Calculation model: {prov['model']}.")
-        return " ".join(parts)
-
-
-class ClaudeProvider:
-    """Anthropic Messages API provider (used when ANTHROPIC_API_KEY is set)."""
-
-    name = "claude"
-
-    def __init__(self, model: str = "claude-sonnet-5"):
-        # model id is configurable; see ANTHROPIC_MODEL
-        self.model = model
-
-    def complete(self, prompt: str, context: Dict[str, Any]) -> str:
-        import os
-        from anthropic import Anthropic  # imported lazily
-        client = Anthropic()
-        msg = client.messages.create(
-            model=os.environ.get("ANTHROPIC_MODEL", self.model),
-            max_tokens=400,
-            messages=[{"role": "user", "content": prompt}],
-        )
-        return "".join(b.text for b in msg.content if b.type == "text")
+from typing import Any, Dict, Optional
 
 
 class ModelAccess:
-    """Unified model access with selection, invocation and output validation."""
-
     RESPONSIBILITY = "L4"
+    FALLBACK_BETA = "server-side-fallback-2026-07-01"
 
-    def __init__(self, provider: Optional[InferenceProvider] = None):
-        if provider is None:
-            provider = (ClaudeProvider() if os.environ.get("ANTHROPIC_API_KEY")
-                        else DeterministicProvider())
-        self.provider = provider
+    def __init__(self, model: Optional[str] = None, effort: str = "medium"):
+        import anthropic
+        self._client = anthropic.Anthropic()
+        self.model = model or os.environ.get("ANTHROPIC_MODEL", "claude-opus-5-5")
+        self.effort = effort
 
     @property
     def provider_name(self) -> str:
-        return self.provider.name
+        return self.model
 
-    def explain(self, context: Dict[str, Any]) -> Dict[str, Any]:
-        prompt = self._build_prompt(context)
-        text = self.provider.complete(prompt, context)
-        return self._validate(text)
-
-    def _build_prompt(self, context: Dict[str, Any]) -> str:
-        return (
-            "Explain the following ESG metric result to an analyst in two or "
-            "three sentences. Use only the values given; do not compute or "
-            "estimate any number yourself.\n\n"
-            f"{context}"
+    def step(self, system: str, messages: list, tools: list) -> Dict[str, Any]:
+        """One inference request; returns the response and its contract status."""
+        response = self._client.beta.messages.create(
+            model=self.model,
+            max_tokens=16000,
+            system=system,
+            messages=messages,
+            tools=tools,
+            output_config={"effort": self.effort},
+            # On a policy decline, the API re-runs the request on a fallback
+            # model chosen by refusal category, inside the same call.
+            betas=[self.FALLBACK_BETA],
+            fallbacks="default",
         )
+        allowed = {t["name"] for t in tools}
+        return {"response": response,
+                "contract": self._validate(response, allowed)}
 
     @staticmethod
-    def _validate(text: str) -> Dict[str, Any]:
-        """Output contract validation: consumable by the response assembler."""
-        ok = isinstance(text, str) and len(text.strip()) > 0
-        return {"status": "success" if ok else "contract_violation",
-                "explanation": text.strip() if ok else None}
+    def _validate(response, allowed) -> str:
+        if response.stop_reason == "refusal":
+            return "refusal"
+        if response.stop_reason == "max_tokens":
+            return "truncated"
+        if response.stop_reason == "tool_use":
+            names = [b.name for b in response.content if b.type == "tool_use"]
+            return "success" if names and all(n in allowed for n in names) \
+                else "unregistered_tool"
+        if response.stop_reason == "end_turn":
+            return "success"
+        return f"unexpected_stop:{response.stop_reason}"

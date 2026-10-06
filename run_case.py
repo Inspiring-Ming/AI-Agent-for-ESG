@@ -1,189 +1,117 @@
 #!/usr/bin/env python3
-"""Architecture instantiation case study (Section V).
+"""Representative request (Section V).
 
-Instantiates the reference architecture over the ESG Metric System
-(https://github.com/Inspiring-Ming/ESG-Metric-System, deployed at
-https://esgalaxy.com.ngrok.dev) and executes the representative scenario:
+Runs one analyst request through the deployed request path (agentic/system.py):
 
-    an analyst requests the calculation and explanation of a company's
-    greenhouse-gas emissions intensity for a reporting period and framework.
-
-Enterprise grounding is ontology-driven traversal of the ESG Metric Knowledge
-Graph through its CQ1-CQ7 competency questions; the metric computation is an
-existing deterministic service operation.
+    an analyst requests the greenhouse-gas emissions intensity of
+    STMicroelectronics for 2023, with an explanation.
 
 Outputs, written to output/:
-  runtime_trace.json      interactions recorded while the scenario ran
-  component_mapping.json  concrete component -> responsibility mapping
+  runtime_trace.json      interaction occurrences recorded during the request
+  component_mapping.json  case component -> responsibility
   variability.json        conditional capabilities and the condition for each
 
-Run:  python3 run_case.py [--mechanism http|local] [--esg-root PATH]
+Run (inside the Compose stack):  python run_case.py
 """
 
-import argparse
 import json
 import os
 import sys
-import warnings
-
-warnings.filterwarnings("ignore")
 
 HERE = os.path.dirname(os.path.abspath(__file__))
-DEFAULT_ESG_ROOT = os.environ.get(
-    "ESG_ROOT", os.path.join(os.path.dirname(HERE), "esg-knowledge-graph-demo"))
-
 sys.path.insert(0, HERE)
-from agentic.trace.recorder import Trace                              # noqa: E402
-from agentic.adapters.esg_system import (                          # noqa: E402
-    HttpAdapter, LocalAdapter, EnterpriseSystemUnavailable)     # noqa: E402
-from agentic.responsibilities.l1_interact import AnalystInterface     # noqa: E402
-from agentic.responsibilities.l2_protect import AccessControl         # noqa: E402
-from agentic.responsibilities.l3_coordinate import AgentRuntime       # noqa: E402
-from agentic.responsibilities.l4_infer import ModelAccess             # noqa: E402
-from agentic.responsibilities.l5_ground import EnterpriseKnowledgeGraph  # noqa: E402
-from agentic.responsibilities.l6_act import ActionRuntime             # noqa: E402
 
-SCENARIO = {
-    "company": "STMicroelectronics NV",
-    "metric": "GHGEmissionIntensity",
-    "year": "2023",
-    "industry": "semiconductors",
-    "category": "Greenhouse Gas Emissions",
-}
+from agentic import system                                         # noqa: E402
+from agentic.adapters.esg_system import EnterpriseSystemUnavailable  # noqa: E402
+from agentic.responsibilities.l2_protect import AccessControl      # noqa: E402
+from agentic.trace.recorder import Trace                           # noqa: E402
 
-ENTITLEMENTS = ["esg.metric.compute"]
+SCENARIO = {"company": "STMicroelectronics NV", "year": "2023",
+            "industry": "semiconductors", "category": "Greenhouse Gas Emissions",
+            "metric": "GHGEmissionIntensity", "explain": True}
+
+MAPPING = [
+    ("L1", "FastAPI service and analyst page", "this package"),
+    ("L2", "Access gate: signed session token, request validation, "
+           "rate limit, egress check", "this package"),
+    ("L3", "Agent runtime: model-driven tool-use loop with guardrails",
+     "this package"),
+    ("L4", "Model access: Claude, output-contract validation, "
+           "server-side fallback", "this package"),
+    ("L5", "ESG knowledge graph (RDF, competency questions) behind an "
+           "MCP server", "existing ESG system"),
+    ("L6", "Action runtime (entitlement check) + metric-computation service "
+           "behind an MCP server", "existing ESG system"),
+    ("L8", "Docker Compose deployment of all services", "this package"),
+]
 
 VARIABILITY = [
     {"capability": "Asynchronous / event-driven execution",
-     "responsibility": "L7", "instantiated": False,
+     "responsibility": "L7",
      "condition": "workload requires decoupling or long-running execution",
-     "reason": "the metric request completes through direct synchronous "
-               "service interaction; report generation would introduce it"},
-    {"capability": "Multi-agent collaboration",
-     "responsibility": "L3", "instantiated": False,
+     "reason": "the request completes through direct synchronous calls"},
+    {"capability": "Multi-agent collaboration", "responsibility": "L3",
      "condition": "execution involves multiple collaborating agents",
-     "reason": "a single coordinating agent is sufficient for the scenario"},
-    {"capability": "Human approval gate",
-     "responsibility": "L6", "instantiated": False,
+     "reason": "a single coordinating agent is sufficient"},
+    {"capability": "Action-policy or approval gate", "responsibility": "L6",
      "condition": "action is consequential and governance requires approval",
      "reason": "metric computation is a bounded analytical read"},
-    {"capability": "Execution isolation / sandboxing",
-     "responsibility": "L6", "instantiated": False,
-     "condition": "risk or execution environment requires isolation",
+    {"capability": "Execution isolation", "responsibility": "L6",
+     "condition": "untrusted or high-risk execution",
      "reason": "the invoked capability is a trusted first-party service"},
-    {"capability": "Persistent memory across executions",
-     "responsibility": "L5", "instantiated": False,
+    {"capability": "Persistent cross-execution memory", "responsibility": "L5",
      "condition": "task requires recall across separate executions",
-     "reason": "the scenario is a single stateless request"},
-    {"capability": "Evaluation and observability",
-     "responsibility": "L9", "instantiated": False,
+     "reason": "each request is independent"},
+    {"capability": "Evaluation and observability", "responsibility": "L9",
      "condition": "deployed operation requires telemetry and evaluation",
-     "reason": "not exercised by a single traced execution"},
+     "reason": "evidence is recorded per request but not correlated by a "
+               "separate L9 service"},
 ]
 
 
-def build(mechanism: str, esg_root: str, trace: Trace):
-    adapter = (HttpAdapter() if mechanism == "http"
-               else LocalAdapter(esg_root))
-    access = AccessControl()                              # L2
-    ground = EnterpriseKnowledgeGraph(adapter)            # L5
-    infer = ModelAccess()                                 # L4
-    act = ActionRuntime(adapter)                          # L6
-    agent = AgentRuntime(ground, infer, act, trace)       # L3
-    client = AnalystInterface(access, agent, trace)       # L1
-    return client, access, infer, act, adapter
-
-
 def main() -> int:
-    ap = argparse.ArgumentParser()
-    ap.add_argument("--mechanism", choices=["http", "local"], default="http",
-                    help="realization mechanism for the ESG system")
-    ap.add_argument("--esg-root", default=DEFAULT_ESG_ROOT,
-                    help="path to a local clone of the ESG Metric System")
-    args = ap.parse_args()
-
     out = os.path.join(HERE, "output")
     os.makedirs(out, exist_ok=True)
 
+    access = AccessControl()
     trace = Trace("ESG greenhouse-gas emissions intensity request")
-    client, access, infer, act, adapter = build(
-        args.mechanism, args.esg_root, trace)
-
-    print("=" * 70)
-    print("ARCHITECTURE INSTANTIATION — ESG metric computation scenario")
-    print("=" * 70)
-    print(f"Request     : {SCENARIO['metric']} for {SCENARIO['company']} "
-          f"({SCENARIO['year']})")
-    print(f"L5 grounding: ESG Metric Knowledge Graph via CQ1–CQ7")
-    print(f"L6 mechanism: {act.mechanism}")
-    print(f"L4 provider : {infer.provider_name}")
-
     token = access.issue_token("analyst@enterprise.example")
-    response = client.submit_metric_request(
-        token=token, entitlements=ENTITLEMENTS, **SCENARIO)
+    result = system.handle(SCENARIO, token, access, trace)
 
-    print("\nResponse")
-    print("-" * 70)
-    if response["status"] != "success":
-        print("  FAILED:", response.get("message"))
-        trace.print_trace()
-        return 1
-    print("  " + response["headline"])
-    print("  framework:", response.get("framework"))
-    print("  " + response["explanation"])
-    print("\n  Agent plan (L3):")
-    for i, step in enumerate(response.get("plan", []), 1):
-        print(f"    {i}. {step}")
-    cqs = response["provenance"]["knowledge_graph"]["competency_questions"]
-    print(f"\n  Knowledge-graph competency questions exercised ({len(cqs)}):")
+    print("=" * 70)
+    print("REPRESENTATIVE REQUEST")
+    print("=" * 70)
+    print(f"status : {result['status']}")
+    print(f"value  : {result.get('value')} {result.get('unit') or ''}")
+    print(f"model  : {result.get('provenance', {}).get('inference_provider')}"
+          f" ({result.get('model_calls')} calls)")
+    print(f"answer : {result.get('answer')}")
+    print(f"number check: {result.get('grounding')}")
+    print("\nplan (L3):")
+    for i, p in enumerate(result.get("plan", []), 1):
+        print(f"  {i}. {p['action']:<22} occ {p['seqs']}  {p['why'][:90]}")
+    cqs = (((result.get("provenance") or {}).get("knowledge_graph") or {})
+           .get("competency_questions", []))
+    print(f"\ncompetency questions run by L5 ({len(cqs)}):")
     for q in cqs:
-        print("    -", q)
-
+        print("  -", q)
     trace.print_trace()
-    trace.to_json(os.path.join(out, "runtime_trace.json"))
 
-    mapping = [
-        {"component": "Analyst interface", "responsibility": "L1",
-         "verb": "Interact", "origin": "case study (mirrors ESG web interface)"},
-        {"component": "Access gate: signed session, validation, rate limit",
-         "responsibility": "L2", "verb": "Protect",
-         "origin": "case study (models the authors' ESG demo access gate)"},
-        {"component": "Agent runtime / orchestrator", "responsibility": "L3",
-         "verb": "Coordinate",
-         "origin": "case study (occupies the model-selection and session seam "
-                   "of the existing system)"},
-        {"component": "Model access and explanation provider",
-         "responsibility": "L4", "verb": "Infer", "origin": "case study"},
-        {"component": "ESG Metric Knowledge Graph (RDF) via CQ1–CQ7",
-         "responsibility": "L5", "verb": "Ground",
-         "origin": "existing ESG Metric System"},
-        {"component": "Metric-computation service (/api/CSservice/calculate)",
-         "responsibility": "L6", "verb": "Act",
-         "origin": "existing ESG Metric System"},
-        {"component": "Deployed service platform (container, gunicorn, "
-                      "health check)", "responsibility": "L8", "verb": "Operate",
-         "origin": "existing ESG Metric System deployment"},
-    ]
+    trace.to_json(os.path.join(out, "runtime_trace.json"))
     with open(os.path.join(out, "component_mapping.json"), "w",
               encoding="utf-8") as fh:
-        json.dump({"scenario": SCENARIO,
-                   "mechanism": act.mechanism,
-                   "source_system": {
-                       "repository":
-                           "https://github.com/Inspiring-Ming/ESG-Metric-System",
-                       "deployment": "https://esgalaxy.com.ngrok.dev"},
-                   "mapping": mapping}, fh, indent=2)
-
+        json.dump({"scenario": SCENARIO, "mechanism": system.MECHANISM,
+                   "mapping": [{"responsibility": r, "component": c,
+                                "origin": o} for r, c, o in MAPPING]},
+                  fh, indent=2)
     with open(os.path.join(out, "variability.json"), "w",
               encoding="utf-8") as fh:
         json.dump({"conditional_capabilities": VARIABILITY}, fh, indent=2)
 
-    inst = sorted({m["responsibility"] for m in mapping})
-    print(f"\n  Responsibilities instantiated: {len(inst)}/10 "
-          f"({', '.join(inst)})")
-    print(f"  Conditional capabilities not instantiated: {len(VARIABILITY)}")
-    print(f"  Evidence written to {out}/")
-    return 0
+    print(f"\nresponsibilities instantiated: {len(MAPPING)}/10 "
+          f"({', '.join(r for r, _, _ in MAPPING)})")
+    print(f"written to {out}/")
+    return 0 if result["status"] == "success" else 1
 
 
 if __name__ == "__main__":

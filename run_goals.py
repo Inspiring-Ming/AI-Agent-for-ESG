@@ -1,163 +1,120 @@
 #!/usr/bin/env python3
-"""Goal-variation experiment.
+"""Goal-variation experiment (Section V-C).
 
-Runs the same coordinator against several goals and records, for each, the
-action sequence it chose, the interaction occurrences it produced, and the
-interaction types it realized.
+Runs the same deployed request path against goals that differ in what they
+require, each several times, and records for every execution the action
+sequence the agent chose, the interaction occurrences produced, the
+interaction types realized, and whether the answer passed the number check.
 
-The purpose is to test the architectural claim that L0--L9 define responsibility
-boundaries rather than a fixed runtime pipeline. If the claim holds, goals that
-differ in what they require should produce different action sequences and
-different sets of realized interaction types, using the same responsibilities
-and the same coordinator.
+If L0-L9 are responsibility boundaries rather than a fixed pipeline, goals that
+require different things should produce different action sequences and type
+sets with the same components. Because the planner is a language model, each
+goal is repeated to measure whether its path is consistent.
 
-Run:  python3 run_goals.py [--mechanism http|local]
+Run (inside the Compose stack):  python run_goals.py [--repeats 3]
 """
 
 import argparse
 import json
 import os
 import sys
-import warnings
 
-warnings.filterwarnings("ignore")
 HERE = os.path.dirname(os.path.abspath(__file__))
-DEFAULT_ESG_ROOT = os.environ.get(
-    "ESG_ROOT", os.path.join(os.path.dirname(HERE), "esg-knowledge-graph-demo"))
 sys.path.insert(0, HERE)
 
-from agentic.trace.recorder import Trace, T_TYPES                     # noqa: E402
-from agentic.adapters.esg_system import (                          # noqa: E402
-    HttpAdapter, LocalAdapter, EnterpriseSystemUnavailable)     # noqa: E402
-from agentic.responsibilities.l2_protect import AccessControl         # noqa: E402
-from agentic.responsibilities.l3_coordinate import AgentRuntime       # noqa: E402
-from agentic.responsibilities.l4_infer import ModelAccess             # noqa: E402
-from agentic.responsibilities.l5_ground import EnterpriseKnowledgeGraph  # noqa: E402
-from agentic.responsibilities.l6_act import ActionRuntime             # noqa: E402
+from agentic import system                                         # noqa: E402
+from agentic.adapters.esg_system import EnterpriseSystemUnavailable  # noqa: E402
+from agentic.responsibilities.l2_protect import AccessControl      # noqa: E402
+from agentic.trace.recorder import Trace, T_TYPES                  # noqa: E402
 
-COMPANY, YEAR, INDUSTRY = "STMicroelectronics NV", "2023", "semiconductors"
-CATEGORY = "Greenhouse Gas Emissions"
+BASE = {"company": "STMicroelectronics NV", "year": "2023",
+        "industry": "semiconductors", "category": "Greenhouse Gas Emissions"}
 
 GOALS = [
-    {"id": "G1",
-     "description": "named metric requiring a calculation model, with explanation",
-     "goal": {"company": COMPANY, "year": YEAR, "industry": INDUSTRY,
-              "category": CATEGORY, "metric": "GHGEmissionIntensity",
-              "explain": True}},
-    {"id": "G2",
-     "description": "same metric, result only (no explanation requested)",
-     "goal": {"company": COMPANY, "year": YEAR, "industry": INDUSTRY,
-              "category": CATEGORY, "metric": "GHGEmissionIntensity",
-              "explain": False}},
-    {"id": "G3",
-     "description": "directly measured metric, with explanation",
-     "goal": {"company": COMPANY, "year": YEAR, "industry": INDUSTRY,
-              "category": CATEGORY, "metric": "GrossGlobalScope1Emissions",
-              "explain": True}},
-    {"id": "G4",
-     "description": "no metric named; agent selects by required method",
-     "goal": {"company": COMPANY, "year": YEAR, "industry": INDUSTRY,
-              "category": CATEGORY, "prefer_method": "calculation_model",
-              "explain": True}},
-    {"id": "G5",
-     "description": "goal that no discovered metric satisfies",
-     "goal": {"company": COMPANY, "year": YEAR, "industry": INDUSTRY,
-              "category": CATEGORY, "metric": "NonexistentMetric",
-              "explain": True}},
+    ("G1", "named calculated metric, explanation requested",
+     {"metric": "GHGEmissionIntensity", "explain": True}),
+    ("G2", "same metric, result only",
+     {"metric": "GHGEmissionIntensity", "explain": False}),
+    ("G3", "named measured metric, explanation requested",
+     {"metric": "GrossGlobalScope1Emissions", "explain": True}),
+    ("G4", "no metric named; one requiring a calculation model",
+     {"prefer_method": "calculation_model", "explain": True}),
+    ("G5", "two named metrics, one calculated and one measured",
+     {"metrics": ["GHGEmissionIntensity", "GrossGlobalScope1Emissions"],
+      "explain": True}),
+    ("G6", "metric the category does not contain",
+     {"metric": "NonexistentMetric", "explain": True}),
 ]
-
-
-def build(mechanism, esg_root, trace):
-    adapter = HttpAdapter() if mechanism == "http" else LocalAdapter(esg_root)
-    return (AccessControl(),
-            AgentRuntime(EnterpriseKnowledgeGraph(adapter), ModelAccess(),
-                         ActionRuntime(adapter), trace))
 
 
 def main() -> int:
     ap = argparse.ArgumentParser()
-    ap.add_argument("--mechanism", choices=["http", "local"], default="http")
-    ap.add_argument("--esg-root", default=DEFAULT_ESG_ROOT,
-                    help="path to a local clone of the ESG Metric System")
+    ap.add_argument("--repeats", type=int, default=3)
     args = ap.parse_args()
 
-    print("=" * 76)
-    print("GOAL-VARIATION EXPERIMENT")
-    print("=" * 76)
-
+    access = AccessControl(rate_limit=1000)
     rows = []
-    for case in GOALS:
-        trace = Trace(case["id"])
-        access, agent = build(args.mechanism, args.esg_root, trace)
-        principal = access.admit(
-            access.issue_token("analyst@enterprise.example"),
-            {"company": COMPANY, "metric": case["goal"].get("metric", "any"),
-             "year": YEAR, "industry": INDUSTRY},
-            ["esg.metric.compute"])
+    for gid, desc, extra in GOALS:
+        for rep in range(1, args.repeats + 1):
+            trace = Trace(gid)
+            result = system.handle(
+                {**BASE, **extra}, access.issue_token("analyst@enterprise.example"),
+                access, trace)
+            types = trace.occurrences_by_type()
+            row = {"id": gid, "repeat": rep, "description": desc,
+                   "status": result["status"],
+                   "actions": [p["action"] for p in result.get("plan", [])],
+                   "occurrences": len(trace.interactions),
+                   "types_realized": sorted(types),
+                   "occurrences_by_type": types,
+                   "responsibilities": trace.responsibilities_touched(),
+                   "values": result.get("values"),
+                   "model_calls": result.get("model_calls"),
+                   "l6_invocations": result.get("l6_invocations"),
+                   "grounded": result["grounding"]["grounded"],
+                   "answer": result.get("answer")}
+            rows.append(row)
+            print(f"{gid}#{rep} {row['status']:<13} occ={row['occurrences']:<3}"
+                  f" {row['types_realized']} {' > '.join(row['actions'])}"
+                  f"  values={row['values']} grounded={row['grounded']}")
 
-        result = agent.pursue(case["goal"], principal)
-        actions = [t["action"] for t in result.get("plan", [])]
-        types = trace.occurrences_by_type()
-        resp = trace.responsibilities_touched()
-
-        rows.append({
-            "id": case["id"], "description": case["description"],
-            "status": result["status"],
-            "actions": actions,
-            "occurrences": len(trace.interactions),
-            "types_realized": sorted(types),
-            "occurrences_by_type": types,
-            "responsibilities": resp,
-            "value": result.get("value"),
-            "measurement_method": result.get("measurement_method"),
-            "explained": bool(result.get("explanation")),
-            "rationale": result.get("selection_rationale"),
-        })
-
-        print(f"\n{case['id']}  {case['description']}")
-        print(f"   status      : {result['status']}")
-        print(f"   actions     : {' -> '.join(actions)}")
-        print(f"   occurrences : {len(trace.interactions)}  "
-              f"types: {sorted(types)}  {types}")
-        print(f"   resp. used  : {resp}")
-        if result.get("value"):
-            print(f"   result      : {result['value']} "
-                  f"({result.get('measurement_method')})"
-                  f"{'  + explanation' if result.get('explanation') else ''}")
-        if result.get("rationale"):
-            print(f"   selection   : {result['rationale']}")
-        if result.get("error"):
-            print(f"   error       : {result['error']}")
-
-    # ---- variation summary ------------------------------------------------
-    seqs = {tuple(r["actions"]) for r in rows}
-    occs = {r["occurrences"] for r in rows}
-    tsets = {tuple(r["types_realized"]) for r in rows}
-    succeeded = [r for r in rows if r["status"] == "success"]
+    per_goal = {}
+    for r in rows:
+        g = per_goal.setdefault(r["id"], {"sequences": set(), "occ": set(),
+                                          "status": set(), "grounded": set(),
+                                          "types": set()})
+        g["sequences"].add(tuple(r["actions"]))
+        g["occ"].add(r["occurrences"])
+        g["status"].add(r["status"])
+        g["grounded"].add(r["grounded"])
+        g["types"].add(tuple(r["types_realized"]))
+    consistency = {gid: {"distinct_sequences": len(v["sequences"]),
+                         "occurrence_counts": sorted(v["occ"]),
+                         "types": [list(t) for t in sorted(v["types"])],
+                         "statuses": sorted(v["status"]),
+                         "all_grounded": all(v["grounded"])}
+                   for gid, v in per_goal.items()}
+    summary = {"executions": len(rows),
+               "distinct_action_sequences":
+                   len({tuple(r["actions"]) for r in rows}),
+               "distinct_occurrence_counts":
+                   sorted({r["occurrences"] for r in rows}),
+               "distinct_type_sets":
+                   len({tuple(r["types_realized"]) for r in rows}),
+               "all_grounded": all(r["grounded"] for r in rows),
+               "per_goal": consistency}
 
     print("\n" + "=" * 76)
-    print(f"  goals executed              : {len(rows)}")
-    print(f"  distinct action sequences   : {len(seqs)}")
-    print(f"  distinct occurrence counts  : {sorted(occs)}")
-    print(f"  distinct realized type sets : {len(tsets)}")
-    for t in sorted(tsets):
-        print(f"      {list(t)}")
-    print(f"  goals satisfied             : {len(succeeded)}/{len(rows)}")
-    print(f"  interaction types defined   : {len(T_TYPES)}")
-    print("=" * 76)
+    print(json.dumps(summary, indent=2))
+    print(f"interaction types defined: {len(T_TYPES)}")
 
     out = os.path.join(HERE, "output")
     os.makedirs(out, exist_ok=True)
     with open(os.path.join(out, "goal_variation.json"), "w",
               encoding="utf-8") as fh:
-        json.dump({"mechanism": args.mechanism,
-                   "summary": {"goals": len(rows),
-                               "distinct_action_sequences": len(seqs),
-                               "distinct_occurrence_counts": sorted(occs),
-                               "distinct_type_sets": len(tsets),
-                               "satisfied": len(succeeded)},
-                   "goals": rows}, fh, indent=2)
-    print(f"  written to {out}/goal_variation.json")
+        json.dump({"mechanism": system.MECHANISM, "repeats": args.repeats,
+                   "summary": summary, "executions": rows}, fh, indent=2)
+    print(f"written to {out}/goal_variation.json")
     return 0
 
 

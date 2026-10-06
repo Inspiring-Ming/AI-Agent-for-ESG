@@ -1,6 +1,6 @@
 {
   "scenario": "ESG greenhouse-gas emissions intensity request",
-  "interaction_occurrences": 11,
+  "interaction_occurrences": 17,
   "interaction_types_defined": 8,
   "interaction_types_observed": [
     "T1",
@@ -12,7 +12,7 @@
   "occurrences_by_type": {
     "T1": 2,
     "T2": 1,
-    "T3": 2,
+    "T3": 8,
     "T4": 4,
     "T5": 2
   },
@@ -33,7 +33,6 @@
       "ttype": "T1",
       "payload": {
         "company": "STMicroelectronics NV",
-        "metric": "GHGEmissionIntensity",
         "year": "2023"
       },
       "elapsed_ms": 0.0
@@ -46,25 +45,46 @@
       "ttype": "T2",
       "payload": {
         "subject": "analyst@enterprise.example",
-        "trace_id": "3f20ae0efa7b"
+        "trace_id": "ff51aedc3f5f"
       },
-      "elapsed_ms": 0.0
+      "elapsed_ms": 0.1
     },
     {
       "seq": 3,
+      "source": "L3",
+      "target": "L4",
+      "purpose": "inference request",
+      "ttype": "T3",
+      "payload": {
+        "provider": "claude-opus-5-5"
+      },
+      "elapsed_ms": 261.3
+    },
+    {
+      "seq": 4,
+      "source": "L4",
+      "target": "L3",
+      "purpose": "inference result",
+      "ttype": "T3",
+      "payload": {
+        "contract": "success"
+      },
+      "elapsed_ms": 2967.5
+    },
+    {
+      "seq": 5,
       "source": "L3",
       "target": "L5",
       "purpose": "capability discovery",
       "ttype": "T4",
       "payload": {
         "category": "Greenhouse Gas Emissions",
-        "industry": "semiconductors",
-        "trace_id": "3f20ae0efa7b"
+        "trace_id": "ff51aedc3f5f"
       },
-      "elapsed_ms": 0.1
+      "elapsed_ms": 2967.5
     },
     {
-      "seq": 4,
+      "seq": 6,
       "source": "L5",
       "target": "L3",
       "purpose": "discovered metrics",
@@ -72,51 +92,90 @@
       "payload": {
         "count": 4
       },
-      "elapsed_ms": 225.0
+      "elapsed_ms": 3155.5
     },
     {
-      "seq": 5,
+      "seq": 7,
+      "source": "L3",
+      "target": "L4",
+      "purpose": "inference request",
+      "ttype": "T3",
+      "payload": {
+        "provider": "claude-opus-5-5"
+      },
+      "elapsed_ms": 3155.6
+    },
+    {
+      "seq": 8,
+      "source": "L4",
+      "target": "L3",
+      "purpose": "inference result",
+      "ttype": "T3",
+      "payload": {
+        "contract": "success"
+      },
+      "elapsed_ms": 7007.5
+    },
+    {
+      "seq": 9,
       "source": "L3",
       "target": "L5",
       "purpose": "context retrieval",
       "ttype": "T4",
       "payload": {
         "metric": "GHGEmissionIntensity",
-        "industry": "semiconductors",
-        "trace_id": "3f20ae0efa7b"
+        "trace_id": "ff51aedc3f5f"
       },
-      "elapsed_ms": 225.0
+      "elapsed_ms": 7007.5
     },
     {
-      "seq": 6,
+      "seq": 10,
       "source": "L5",
       "target": "L3",
       "purpose": "grounded context",
       "ttype": "T4",
       "payload": {
-        "framework": "SASB Semiconductors",
         "method": "calculation_model",
         "model": "GHGEmissionIntensityModel",
-        "competency_questions": 6
+        "competency_questions": 5
       },
-      "elapsed_ms": 556.8
+      "elapsed_ms": 7398.1
     },
     {
-      "seq": 7,
+      "seq": 11,
+      "source": "L3",
+      "target": "L4",
+      "purpose": "inference request",
+      "ttype": "T3",
+      "payload": {
+        "provider": "claude-opus-5-5"
+      },
+      "elapsed_ms": 7398.1
+    },
+    {
+      "seq": 12,
+      "source": "L4",
+      "target": "L3",
+      "purpose": "inference result",
+      "ttype": "T3",
+      "payload": {
+        "contract": "success"
+      },
+      "elapsed_ms": 9586.6
+    },
+    {
+      "seq": 13,
       "source": "L3",
       "target": "L6",
       "purpose": "action intent",
       "ttype": "T5",
       "payload": {
-        "tool": "compute_metric",
-        "metric": "GHGEmissionIntensity",
-        "model": "GHGEmissionIntensityModel",
-        "method": "calculation_model"
+        "metric": "GHGEmissionIntensity"
       },
-      "elapsed_ms": 556.8
+      "elapsed_ms": 9586.6
     },
     {
-      "seq": 8,
+      "seq": 14,
       "source": "L6",
       "target": "L3",
       "purpose": "observation",
@@ -125,21 +184,21 @@
         "status": "success",
         "value": "45.4703"
       },
-      "elapsed_ms": 837.8
+      "elapsed_ms": 9850.4
     },
     {
-      "seq": 9,
+      "seq": 15,
       "source": "L3",
       "target": "L4",
       "purpose": "inference request",
       "ttype": "T3",
       "payload": {
-        "provider": "deterministic-template"
+        "provider": "claude-opus-5-5"
       },
-      "elapsed_ms": 837.8
+      "elapsed_ms": 9850.4
     },
     {
-      "seq": 10,
+      "seq": 16,
       "source": "L4",
       "target": "L3",
       "purpose": "inference result",
@@ -147,10 +206,10 @@
       "payload": {
         "contract": "success"
       },
-      "elapsed_ms": 837.8
+      "elapsed_ms": 12395.2
     },
     {
-      "seq": 11,
+      "seq": 17,
       "source": "L3",
       "target": "L1",
       "purpose": "result and explanation",
@@ -159,7 +218,7 @@
         "value": "45.4703",
         "unit": "tons CO2e per million USD"
       },
-      "elapsed_ms": 837.8
+      "elapsed_ms": 12395.5
     }
   ]
 }

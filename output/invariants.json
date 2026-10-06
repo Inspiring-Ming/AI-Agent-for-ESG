@@ -1,5 +1,6 @@
 {
-  "mechanism": "deployed service API (HTTP/REST)",
+  "mechanism": "MCP (streamable HTTP)",
+  "model": "claude-opus-5-5",
   "summary": {
     "I1": {
       "probes": 2,
@@ -23,7 +24,7 @@
       "invariant": "I1",
       "probe": "the reported value must originate from the computation service, not from model inference",
       "expected": "exactly one computation-service invocation; the explanation restates that value without recomputing it",
-      "observed": "computation-service invocations=1; reported value=45.4703; value restated in explanation=True",
+      "observed": "computation-service invocations=1; reported value=45.4703; value restated in explanation=True; numbers in model answer [2023.0, 45.4703, 514000.0, 272000.0, 17286.0, 45.47, 2023.0] all traced to L5/L6 results=True",
       "preserved": true
     },
     {
@@ -37,14 +38,14 @@
       "invariant": "I2",
       "probe": "execution-local state and reusable enterprise knowledge must be owned by different responsibilities",
       "expected": "L3 holds only execution-local state; definitions arrive from L5 with knowledge-store provenance",
-      "observed": "L3 execution-state keys=['candidates', 'explanation', 'goal', 'principal', 'selected', 'selection_rationale', 'status', 'steps', 'trace']; L5 context store='ESG Metric Knowledge Graph (RDF)' via 6 competency questions",
+      "observed": "L3 execution-state keys=['candidates', 'computations', 'final_text', 'goal', 'l6_invocations', 'model_calls', 'plan', 'principal', 'selected', 'status']; L5 context store='ESG Metric Knowledge Graph (RDF)' via 5 competency questions",
       "preserved": true
     },
     {
       "invariant": "I2",
       "probe": "a second execution must re-retrieve knowledge rather than reuse coordinator state",
       "expected": "the knowledge graph is queried again for the new execution",
-      "observed": "knowledge-graph model queries: before=1, after=2",
+      "observed": "knowledge-graph queries: before=1, after=2",
       "preserved": true
     },
     {
@@ -65,7 +66,7 @@
       "invariant": "I4",
       "probe": "each responsibility must emit evidence about its own operations, correlatable across the execution",
       "expected": "evidence originates from multiple responsibilities and shares a correlation identifier established at the boundary",
-      "observed": "emitting responsibilities=['L3', 'L4', 'L5', 'L6']; interactions carrying trace_id c3c103c500d7=2",
+      "observed": "emitting responsibilities=['L3', 'L4', 'L5', 'L6']; interactions carrying trace_id a5ce308467bc=2",
       "preserved": true
     }
   ]

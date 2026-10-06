@@ -1,11 +1,7 @@
-# The instantiation runs against the deployed ESG Metric System using only the
-# Python standard library. No dependencies are required for the default
-# (deterministic) configuration.
-#
-# Optional: hosted model provider for L4 (set ANTHROPIC_API_KEY to enable)
-# anthropic>=0.40
-
-# Optional: required only for `--mechanism local`, which imports the ESG
-# Metric System in process instead of calling its deployed API.
-# rdflib>=7.0
-# pandas>=2.1
+# Agent service, MCP servers and experiments (Python 3.10+; built in Docker).
+anthropic>=0.75
+mcp>=1.12
+fastapi>=0.115
+uvicorn[standard]>=0.30
+pydantic>=2.7
+matplotlib>=3.8   # figure generators only

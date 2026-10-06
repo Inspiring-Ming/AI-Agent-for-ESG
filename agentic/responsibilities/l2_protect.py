@@ -1,9 +1,8 @@
 """L2 -- Access, Identity & Safety Control (Protect).
 
 Protects the controlled boundary through which requests and responses enter or
-leave the agentic system. Modelled on the access gate of the authors' ESG
-analytics demo: a signed-token session, request validation, and a per-principal
-sliding-window rate limit.
+leave the agentic system: a signed-token session, request validation, a
+per-principal sliding-window rate limit, and an egress check.
 
 Boundary (Section IV-B / IV-E): L2 decides whether an identity may access the
 agentic service, and propagates identity, entitlement and trace context to
@@ -14,11 +13,12 @@ enforces the controls applicable to the resource being accessed.
 
 import hashlib
 import hmac
+import os
 import time
 import uuid
 from typing import Any, Dict, List, Optional
 
-_SECRET = b"case-study-demonstration-secret"
+_SECRET = os.environ.get("SESSION_SECRET", "replication-package-secret").encode()
 
 
 class AccessControl:
@@ -32,7 +32,7 @@ class AccessControl:
     # -- identity ----------------------------------------------------------
     @staticmethod
     def issue_token(subject: str) -> str:
-        """Signed session token (HMAC-SHA256), as in the authors' demo gate."""
+        """Signed session token (HMAC-SHA256)."""
         issued = str(int(time.time()))
         mac = hmac.new(_SECRET, f"{subject}:{issued}".encode(),
                        hashlib.sha256).hexdigest()

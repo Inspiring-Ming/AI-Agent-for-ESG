@@ -38,10 +38,10 @@ LANES = [
     ("L3", "Agent & Workflow\nOrchestration", "goal-directed agent", False),
     ("L5", "Enterprise Context\n& Knowledge", "ESG knowledge graph", True),
     ("L6", "Tool & Action\nRuntime", "metric computation", True),
-    ("L4", "Model Access\n& Inference", "explanation provider", False),
+    ("L4", "Model Access\n& Inference", "Claude model access", False),
 ]
 
-FW, FH = 10.5, 5.35
+FW, FH = 10.5, 6.6
 F_HEAD, F_SUB, F_MSG, F_NOTE = 9.4, 8.4, 8.4, 8.2
 
 
@@ -64,18 +64,18 @@ def describe(it):
     if purpose == "discovered metrics":
         return f"{p.get('count')} candidate metrics"
     if purpose == "context retrieval":
-        return f"definition of {p.get('metric')}"
+        return f"how is {p.get('metric')} calculated?"
     if purpose == "grounded context":
         return (f"model {p.get('model')}, inputs, provenance "
                 f"(CQ1–CQ{p.get('competency_questions')})")
     if purpose == "action intent":
-        return "compute with the resolved model"
+        return f"compute {p.get('metric')}"
     if purpose == "observation":
         return f"value {_num(p.get('value'))} + inputs and provenance"
     if purpose == "inference request":
-        return "explain the computed result"
+        return "what next? (goal + observations so far)"
     if purpose == "inference result":
-        return "explanation (output contract satisfied)"
+        return f"model decision (output contract: {p.get('contract')})"
     if purpose == "result and explanation":
         return (f"result {_num(p.get('value'))} t CO\u2082e per USD million "
                 "+ explanation")
@@ -167,8 +167,9 @@ def draw(out_dir):
     ax.text(0.20, 0.12,
             f"{tr['interaction_occurrences']} recorded interaction "
             f"occurrences realizing {len(tr['interaction_types_observed'])} "
-            f"of {tr['interaction_types_defined']} interaction types. "
-            "L2 applies its egress check to the result before L1 presents it.",
+            f"of {tr['interaction_types_defined']} interaction types; L5 and L6 "
+            "are reached through MCP. L2 applies its egress check before L1 "
+            "presents the result.",
             ha="left", va="center", fontsize=F_NOTE, color=MUTED)
 
     os.makedirs(out_dir, exist_ok=True)
@@ -183,4 +184,7 @@ def draw(out_dir):
 if __name__ == "__main__":
     ap = argparse.ArgumentParser()
     ap.add_argument("--out", default=os.path.join(HERE, "figures"))
-    draw(ap.parse_args().out)
+    ap.add_argument("--trace", default=TRACE)
+    a = ap.parse_args()
+    TRACE = a.trace
+    draw(a.out)

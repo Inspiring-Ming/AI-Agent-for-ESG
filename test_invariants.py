@@ -13,34 +13,27 @@ outcomes rather than assertions.
   I4 Evidence-Ownership--Correlation each responsibility emits local evidence;
                                     L9 correlates
 
-Run:  python3 test_invariants.py [--mechanism http|local]
+Run (inside the Compose stack):  python test_invariants.py
 """
 
-import argparse
 import json
 import os
 import sys
-import warnings
 
-warnings.filterwarnings("ignore")
 HERE = os.path.dirname(os.path.abspath(__file__))
-DEFAULT_ESG_ROOT = os.environ.get(
-    "ESG_ROOT", os.path.join(os.path.dirname(HERE), "esg-knowledge-graph-demo"))
 sys.path.insert(0, HERE)
 
-from agentic.trace.recorder import Trace                              # noqa: E402
-from agentic.adapters.esg_system import (                          # noqa: E402
-    HttpAdapter, LocalAdapter, EnterpriseSystemUnavailable)     # noqa: E402
-from agentic.responsibilities.l2_protect import AccessControl         # noqa: E402
-from agentic.responsibilities.l3_coordinate import AgentRuntime       # noqa: E402
-from agentic.responsibilities.l4_infer import (                       # noqa: E402
-    ModelAccess, DeterministicProvider)
-from agentic.responsibilities.l5_ground import EnterpriseKnowledgeGraph  # noqa: E402
-from agentic.responsibilities.l6_act import ActionRuntime             # noqa: E402
+from agentic import system                                         # noqa: E402
+from agentic.adapters.esg_system import EnterpriseSystemUnavailable  # noqa: E402
+from agentic.responsibilities.l2_protect import AccessControl      # noqa: E402
+from agentic.responsibilities.l3_coordinate import AgentRuntime    # noqa: E402
+from agentic.responsibilities.l4_infer import ModelAccess          # noqa: E402
+from agentic.responsibilities.l6_act import ActionRuntime          # noqa: E402
+from agentic.trace.recorder import Trace                           # noqa: E402
 
 SCENARIO = {"company": "STMicroelectronics NV", "metric": "GHGEmissionIntensity",
             "year": "2023", "industry": "semiconductors",
-            "category": "Greenhouse Gas Emissions"}
+            "category": "Greenhouse Gas Emissions", "explain": True}
 
 FINDINGS = []
 
@@ -52,8 +45,8 @@ def record(inv, probe, expected, observed, preserved):
     print(f"         observed: {observed}")
 
 
-class CountingAdapter:
-    """Wraps an adapter and counts how often the computation service runs."""
+class Counting:
+    """Wraps an L5 or L6 backend and counts the calls that reach it."""
 
     def __init__(self, inner):
         self._inner = inner
@@ -64,37 +57,28 @@ class CountingAdapter:
     def __getattr__(self, name):
         return getattr(self._inner, name)
 
-    def calculate(self, *a, **k):
+    def calculate(self, *a, **k):            # L6 execution backend
         self.calculate_calls += 1
         return self._inner.calculate(*a, **k)
 
-    def models(self, *a, **k):
+    def assemble_metric_context(self, *a, **k):   # L5 context retrieval
         self.kg_calls += 1
-        return self._inner.models(*a, **k)
+        return self._inner.assemble_metric_context(*a, **k)
 
 
 def main() -> int:
-    ap = argparse.ArgumentParser()
-    ap.add_argument("--mechanism", choices=["http", "local"], default="http")
-    ap.add_argument("--esg-root", default=DEFAULT_ESG_ROOT,
-                    help="path to a local clone of the ESG Metric System")
-    args = ap.parse_args()
-
-    base = (HttpAdapter() if args.mechanism == "http"
-            else LocalAdapter(args.esg_root))
-    adapter = CountingAdapter(base)
-
-    print("=" * 70)
-    print("BOUNDARY-INVARIANT EXPERIMENTS (Table III)")
-    print("=" * 70)
-    print(f"mechanism: {adapter.mechanism}\n")
-
     trace = Trace("invariant probes")
     access = AccessControl()
-    ground = EnterpriseKnowledgeGraph(adapter)
-    infer = ModelAccess(DeterministicProvider())
+    kg = Counting(system.knowledge())
+    adapter = Counting(system.compute_backend())
+    infer = ModelAccess()
     act = ActionRuntime(adapter)
-    agent = AgentRuntime(ground, infer, act, trace)
+    agent = AgentRuntime(kg, infer, act, trace)
+
+    print("=" * 70)
+    print("BOUNDARY-INVARIANT PROBES")
+    print("=" * 70)
+    print(f"mechanism: {system.MECHANISM}   model: {infer.provider_name}\n")
 
     principal = access.admit(
         access.issue_token("analyst@enterprise.example"),
@@ -102,17 +86,21 @@ def main() -> int:
 
     # ---------------- I1: Coordination -- Execution ----------------------
     print("I1  Coordination--Execution")
-    result = agent.handle_metric_request(SCENARIO, principal)
+    result = agent.pursue(SCENARIO, principal)
     value_from_service = adapter.calculate_calls == 1
     reported = result.get("value")
-    in_expl = reported in (result.get("explanation") or "")
+    answer = result.get("answer") or ""
+    grounding = result["grounding"]
+    in_expl = reported in answer and grounding["grounded"]
     record("I1",
            "the reported value must originate from the computation service, "
            "not from model inference",
            "exactly one computation-service invocation; the explanation "
            "restates that value without recomputing it",
            f"computation-service invocations={adapter.calculate_calls}; "
-           f"reported value={reported}; value restated in explanation={in_expl}",
+           f"reported value={reported}; value restated in explanation={in_expl}"
+           + f"; numbers in model answer {grounding['numbers']} all traced "
+             f"to L5/L6 results={grounding['grounded']}",
            value_from_service and in_expl)
 
     # L3 cannot execute: it owns no execution mechanism
@@ -140,17 +128,15 @@ def main() -> int:
            bool(state_keys) and kg_sourced is not None and cqs > 0)
 
     # knowledge is retrieved per execution, not cached in the coordinator
-    agent2 = AgentRuntime(EnterpriseKnowledgeGraph(adapter), infer, act,
-                          Trace("second"))
-    before = adapter.kg_calls
-    agent2.handle_metric_request(SCENARIO, principal)
+    agent2 = AgentRuntime(kg, infer, act, Trace("second"))
+    before = kg.kg_calls
+    agent2.pursue(SCENARIO, principal)
     record("I2",
            "a second execution must re-retrieve knowledge rather than reuse "
            "coordinator state",
            "the knowledge graph is queried again for the new execution",
-           f"knowledge-graph model queries: before={before}, "
-           f"after={adapter.kg_calls}",
-           adapter.kg_calls > before)
+           f"knowledge-graph queries: before={before}, after={kg.kg_calls}",
+           kg.kg_calls > before)
 
     # ---------------- I3: System-Access -- Resource-Authority ------------
     print("\nI3  System-Access--ResourceAuthority")
@@ -203,8 +189,10 @@ def main() -> int:
     summary = {inv: {"probes": len(v),
                      "preserved": all(x["preserved"] for x in v)}
                for inv, v in by_inv.items()}
-    with open(os.path.join(out, "invariants.json"), "w", encoding="utf-8") as fh:
-        json.dump({"mechanism": adapter.mechanism, "summary": summary,
+    name = "invariants.json"
+    with open(os.path.join(out, name), "w", encoding="utf-8") as fh:
+        json.dump({"mechanism": system.MECHANISM, "model": infer.provider_name,
+                   "summary": summary,
                    "findings": FINDINGS}, fh, indent=2)
 
     print("\n" + "=" * 70)
@@ -215,7 +203,7 @@ def main() -> int:
     passed = sum(1 for f in FINDINGS if f["preserved"])
     print(f"  {passed}/{len(FINDINGS)} probes passed")
     print("=" * 70)
-    print(f"  written to {out}/invariants.json")
+    print(f"  written to {out}/{name}")
     return 0 if passed == len(FINDINGS) else 1
 
 

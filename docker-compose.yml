@@ -1,0 +1,54 @@
+# One command brings up the whole instantiation:
+#   docker compose up --build        then open http://localhost:8090
+#
+# esg            existing ESG Metric System (L5/L6 enterprise services, L8 host)
+# mcp-knowledge  MCP server exposing the knowledge graph            (L5)
+# mcp-compute    MCP server exposing metric computation             (L6)
+# agent          FastAPI service: analyst API + page (L1), access gate (L2),
+#                agent runtime (L3), Claude model access (L4)
+#
+# ESG_REPO points at a clone of https://github.com/Inspiring-Ming/ESG-Metric-System
+# (default: a sibling checkout). ANTHROPIC_API_KEY is read from .env.
+
+services:
+  esg:
+    build:
+      context: ${ESG_REPO:-../../esg-knowledge-graph-demo}
+      dockerfile_inline: |
+        FROM python:3.11-slim
+        WORKDIR /app
+        ENV PYTHONUNBUFFERED=1
+        COPY requirements.txt .
+        RUN pip install --no-cache-dir -r requirements.txt
+        COPY src ./src
+        COPY data ./data
+        COPY web_interface ./web_interface
+        CMD ["gunicorn", "--workers", "2", "--timeout", "120", "-b", "0.0.0.0:8080", "src.api.esg_api:create_app()"]
+    ports: ["8080:8080"]
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8080/api/DRservice/companies/all', timeout=5)"]
+      interval: 10s
+      timeout: 10s
+      retries: 12
+
+  mcp-knowledge:
+    build: .
+    command: ["python", "-m", "mcp_servers.knowledge_server"]
+    environment: {ESG_URL: "http://esg:8080", MCP_PORT: "8101"}
+    depends_on: {esg: {condition: service_healthy}}
+
+  mcp-compute:
+    build: .
+    command: ["python", "-m", "mcp_servers.compute_server"]
+    environment: {ESG_URL: "http://esg:8080", MCP_PORT: "8102"}
+    depends_on: {esg: {condition: service_healthy}}
+
+  agent:
+    build: .
+    command: ["uvicorn", "service.api:app", "--host", "0.0.0.0", "--port", "8090"]
+    env_file: .env
+    environment:
+      MCP_KNOWLEDGE_URL: http://mcp-knowledge:8101/mcp
+      MCP_COMPUTE_URL: http://mcp-compute:8102/mcp
+    ports: ["8090:8090"]
+    depends_on: [mcp-knowledge, mcp-compute]

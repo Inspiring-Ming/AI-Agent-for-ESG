@@ -1,140 +1,133 @@
 # AI Agent for ESG — Reference Architecture Instantiation
 
 Replication package for the architecture instantiation and evaluation reported
-in *A Reference Architecture for Enterprise Agentic AI Integration*.
+in *A Reference Architecture for Enterprise Agentic AI Integration*
+(responsibilities L0–L9, interaction types T1–T8, boundary invariants I1–I4).
 
-A goal-directed agent is instantiated over an existing enterprise ESG metric
-computation and reporting system. Each architectural responsibility is a
-separate module, so the responsibility boundaries claimed by the architecture
-are visible in the source layout and testable at runtime.
+An LLM agent (Claude) is instantiated over an existing enterprise ESG metric
+system. The model decides each next step; the existing system's knowledge graph
+and computation service are reached through **MCP**; every exchange between
+responsibilities is recorded as an *interaction occurrence* (one directed
+exchange; a request and its return are counted separately).
 
-The underlying enterprise system is not reimplemented here. Enterprise
-knowledge and executable services are reached through its published service
-interface:
+- Existing enterprise system: <https://github.com/Inspiring-Ming/ESG-Metric-System>
 
-- Source: <https://github.com/Inspiring-Ming/ESG-Metric-System>
-- Deployment: <https://esgalaxy.com.ngrok.dev>
+## Quick start
 
-## What is instantiated
+```bash
+cp .env.example .env            # add your ANTHROPIC_API_KEY
+docker compose up -d --build    # ESG system, two MCP servers, agent service
+open http://localhost:8090      # watch the agent work, step by step
+./evaluate.sh                   # reproduce the recorded results (REPEATS=3 default)
+```
 
-| Responsibility | Module | Origin |
+`ESG_REPO` (default `../../esg-knowledge-graph-demo`) points at a local clone
+of the ESG Metric System, which Compose builds as the `esg` service.
+
+## Architecture as deployed
+
+| Responsibility | Realized by | Origin |
 |---|---|---|
-| L1 Interact  | `agentic/responsibilities/l1_interact.py`  | this package |
-| L2 Protect   | `agentic/responsibilities/l2_protect.py`   | this package |
-| L3 Coordinate| `agentic/responsibilities/l3_coordinate.py`| this package |
-| L4 Infer     | `agentic/responsibilities/l4_infer.py`     | this package |
-| L5 Ground    | `agentic/responsibilities/l5_ground.py`    | **existing system** (ESG knowledge graph, CQ1–CQ7) |
-| L6 Act       | `agentic/responsibilities/l6_act.py`       | **existing system** (metric-computation services) |
-| L8 Operate   | deployment of the existing system          | **existing system** |
+| L1 Client & Experience | FastAPI service + analyst page (`service/api.py`, `ui/`) | this package |
+| L2 Access, Identity & Safety Control | signed session token, request validation, rate limit, egress check (`l2_protect.py`) | this package |
+| L3 Agent & Workflow Orchestration | Claude tool-use loop; the model chooses each next tool (`l3_coordinate.py`) | this package |
+| L4 Model Access & Inference | Claude model access, output-contract validation, server-side fallback (`l4_infer.py`) | this package |
+| L5 Enterprise Context & Knowledge | ESG knowledge graph (competency questions CQ1–CQ5) behind an MCP server (`mcp_servers/knowledge_server.py`) | **existing system** |
+| L6 Tool & Action Runtime | resource authorization (`l6_act.py`) + metric computation behind an MCP server (`mcp_servers/compute_server.py`) | **existing system** |
+| L8 Platform & Delivery Infrastructure | Docker Compose deployment | this package |
 
-L0, L7 and L9 are not instantiated as runtime components in the evaluated
-scenario; `output/variability.json` records the condition under which each
-would be required.
+L0, L7 and L9 are not instantiated as runtime components.
 
-## The agent
-
-`l3_coordinate.py` implements a plan → act → observe loop. It receives a *goal*,
-not a procedure:
-
-- **plan** — inspect the goal and accumulated observations, select the next
-  action (`discover`, `select`, `ground`, `compute`, `explain`, `abort`,
-  `finish`)
-- **act** — engage the responsibility that owns that action
-- **observe** — record the result into the working context, conditioning the
-  next planning step
-
-Nothing in the coordinator prescribes the order in which L4, L5 and L6 are
-engaged. The agent discovers which metrics a category contains by querying the
-knowledge graph (CQ3), selects among them, and determines whether a calculation
-model is required.
-
-## Running
-
-```bash
-python3 run_case.py        # one scenario, end to end, recording its trace
-python3 run_goals.py       # five goals; shows how the action sequence varies
-python3 test_invariants.py # probes the four boundary invariants
-python3 independent_mapping.py          # mapping of an independent architecture
-python3 independent_mapping.py --verify # re-fetch and check element names
-python3 test_boundaries.py # regression checks
-python3 figures/make_fig_instantiation.py  # regenerate the instantiation figure
+```
+Analyst ─T1─▶ FastAPI (L1) ─▶ access gate (L2) ─T2─▶ agent loop (L3)
+                                                   │ each decision ─T3─▶ Claude (L4)
+                         MCP: knowledge graph (L5) ◀─T4─┤
+                         MCP: computation     (L6) ◀─T5─┘
 ```
 
-Add `--mechanism local --esg-root PATH` (or set `ESG_ROOT`) to import the ESG
-services in process instead of calling the deployed API. Both mechanisms
-produce identical results for all five goals; only the realization mechanism
-differs. If the deployment is unreachable, the scripts exit with guidance to
-use `--mechanism local` rather than a traceback.
+| Compose service | Port | Role |
+|---|---|---|
+| `esg` | 8080 | existing ESG Metric System (knowledge graph + computation API) |
+| `mcp-knowledge` | 8101 | MCP server for L5 |
+| `mcp-compute` | 8102 | MCP server for L6 |
+| `agent` | 8090 | L1–L4 (FastAPI + agent) |
 
-**No API key is required.** L4 defaults to a deterministic explanation provider
-so recorded traces are reproducible. Setting `ANTHROPIC_API_KEY` substitutes a
-hosted model provider with no change to L3, L5 or L6; `ANTHROPIC_MODEL`
-overrides the model id.
+### Guardrails owned by L3
 
-> The deployment is tunnelled and may be unavailable at times. If it is, use
-> `--mechanism local` against a clone of the ESG Metric System, or inspect the
-> recorded results in `output/`.
+- the model never supplies company, year or category; it only chooses which
+  metric tool to call;
+- the reported value is always the one returned by L6, never model text;
+- **number check**: every number in the model's answer must occur in what L5
+  or L6 returned;
+- a bound on model calls (8).
 
-## Interactive view
+## Configuration
 
-```bash
-pip install flask
-python3 ui/app.py          # then open http://localhost:8090
-```
+| Variable | Values |
+|---|---|
+| `ANTHROPIC_API_KEY` | required (in `.env`) |
+| `ANTHROPIC_MODEL` | default `claude-opus-5-5` |
+| `SESSION_SECRET` | signing key for L2 session tokens |
 
-Type a request and watch the agent work: each step shows the agent's decision,
-its reason, which responsibility it engaged, and what was exchanged, followed by
-the computed value and explanation.
+## Experiments
 
-## Results
+| Script | What it measures |
+|---|---|
+| `run_case.py` | the representative request, recorded as interaction occurrences |
+| `run_goals.py` | goal-conditioned variation; `--repeats` for consistency of the model-driven planner |
+| `test_invariants.py` | boundary invariants I1–I4, each probed with a violating operation |
+| `independent_mapping.py` | mapping of an independently published architecture (`--verify` re-fetches the source) |
+| `figures/make_fig_sequence.py` | the recorded-execution figure, generated from `output/` |
 
-Recorded in `output/` and reproduced by the commands above.
+All scripts run through `agentic/system.py`, the same request path the
+service uses, and write their results to `output/`.
 
-**Scenario** — 11 interaction occurrences realizing 5 of the 8 defined
-interaction types; 7 of 10 responsibilities instantiated.
+## Recorded results
 
-**Goal variation** — the same coordinator and responsibilities produce
-different action sequences according to the goal:
+**Representative request** (GHG emissions intensity, STMicroelectronics, 2023):
+45.47 t CO2e per USD million, from Scope 1 = 514,000 t, Scope 2 = 272,000 t,
+revenue = USD 17,286 million. 17 interaction occurrences realizing T1–T5;
+4 model calls; every number in the answer traced to L5/L6 results.
+
+**Goal variation** (6 goals × 3 executions):
 
 | Goal | Occ. | Types | Outcome |
 |---|---|---|---|
-| G1 named metric requiring a calculation model, explanation requested | 8 | T3–T5 | computed, explained |
-| G2 same metric, explanation not requested | 6 | T4, T5 | computed |
-| G3 directly measured metric, explanation requested | 8 | T3–T5 | computed, explained |
-| G4 no metric named; agent selects by required method | 8 | T3–T5 | selected 1 of 4, computed |
-| G5 goal no discovered metric satisfies | 2 | T4 | terminated; L6 never engaged |
+| G1 named calculated metric, explanation | 17 | T1–T5 | computed |
+| G2 same metric, result only | 17 | T1–T5 | computed |
+| G3 named measured metric, explanation | 17 | T1–T5 | computed |
+| G4 no metric named; needs a calculation model | 17 | T1–T5 | 1 of 4 selected, computed |
+| G5 two metrics | 21 | T1–T5 | both computed |
+| G6 metric not in the category | 9 | T1–T4 | refused; L6 not engaged |
 
-Three distinct action sequences; occurrence counts of 2, 6 and 8.
+Each goal took the same path in all three executions; all 18 answers passed
+the number check.
 
-**Boundary invariants** — 7 probes, each an operation that would violate an
-invariant if the boundary were not enforced; all four invariants preserved.
+**Boundary invariants** — 7 probes, all four invariants preserved.
 
-**Independent mapping** — 10 elements of an independently published agentic
-architecture mapped to the responsibilities; none required a responsibility
-outside L0–L9.
+**Independent mapping** — 10 elements of Microsoft's Multi-Agent Reference
+Architecture; none required a responsibility outside L0–L9.
 
 ## Scope and limitations
 
-- The evaluation exercises a single-agent, synchronous configuration.
+- One industry case; a single coordinating agent; synchronous execution.
   Multi-agent collaboration, asynchronous mediation, persistent memory, human
-  approval and execution isolation are represented as variation points rather
-  than instantiated.
-- Of the seven invariant probes, those for I1 and I2 observe calls into the
-  external enterprise system; those for I3 and I4 exercise components defined
-  in this package.
-- The independent mapping is a descriptive analysis of a published
-  architecture, which is weaker evidence than instantiation, and that source is
-  revised over time.
-- Default runs use the deterministic explanation provider, so no model
-  inference is performed unless a hosted provider is configured.
+  approval and execution isolation are variation points, not instantiated.
+- The model-driven planner is not deterministic; consistency is measured over
+  repeated executions rather than assumed.
+- The independent mapping is a descriptive analysis of a published source.
 
 ## Layout
 
 ```
 agentic/
   responsibilities/   one module per instantiated responsibility
-  adapters/           interchangeable access to the ESG system (HTTP / in-process)
+  system.py           the request path shared by the service and the scripts
+  adapters/           MCP clients; HTTP adapter used by the MCP servers
   trace/              interaction recorder and the T1–T8 interaction types
+mcp_servers/          MCP servers exposing L5 and L6 of the existing system
+service/              FastAPI service (L1, L2)
+ui/                   analyst page
 output/               recorded results (JSON)
-figures/              instantiation figure, generated from output/
+figures/              figure generators
 ```
