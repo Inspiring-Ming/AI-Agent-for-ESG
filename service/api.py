@@ -39,7 +39,7 @@ RESP = {
     "L3": ("Agent & Workflow Orchestration", "the agent"),
     "L4": ("Model Access & Inference", "Claude model access"),
     "L5": ("Enterprise Context & Knowledge", "ESG knowledge graph"),
-    "L6": ("Tool & Action Runtime", "computation & portfolio services"),
+    "L6": ("Tool & Action Runtime", "computation, portfolio & compliance"),
 }
 LABEL = {
     "decide": "Model decides the next step",
@@ -49,7 +49,8 @@ LABEL = {
     "get_metric_definition": "Look up how the metric is calculated",
     "compute_metric": "Compute a holding's carbon intensity",
     "portfolio_intensity": "Compute the portfolio's carbon intensity",
-    "propose_rebalance": "Propose a reweighting (needs approval)",
+    "check_trade": "Check the trade against the fund mandate",
+    "submit_trade": "Submit the trade (re-checked by compliance)",
 }
 
 app = FastAPI(title="ESG portfolio agent", version="2.0")
@@ -75,7 +76,8 @@ def _describe(i) -> str:
         return {"compute_metric": f"Compute intensity: {p.get('company')}, "
                                   f"{p.get('year')}",
                 "portfolio_intensity": f"Compute portfolio WACI for {p.get('year')}",
-                "propose_rebalance": f"Propose reweighting ({p.get('year')})",
+                "check_trade": "Pre-trade compliance check",
+                "submit_trade": "Submit trade instruction",
                 }.get(tool, "Action")
     if i.purpose == "observation":
         if tool == "compute_metric":
@@ -83,12 +85,15 @@ def _describe(i) -> str:
                     else f"{p.get('company')}: no value ({p.get('status')})")
         if p.get("waci") is not None:
             return f"Portfolio WACI {p.get('waci')}"
+        if tool == "check_trade":
+            return ("Within the mandate" if p.get("compliant")
+                    else "Breaches the mandate")
         return f"Status: {p.get('status')}" + (
-            f", proposal {p.get('proposal_id')}" if p.get("proposal_id") else "")
+            f", trade {p.get('trade_id')}" if p.get("trade_id") else "")
     return {
         "request admission": f"Question about {p.get('holdings')} holdings "
                              f"({p.get('year')})",
-        "approval decision": f"Decision on proposal {p.get('proposal_id')}"
+        "override decision": f"Override decision on trade {p.get('trade_id')}"
                              + (f": {p.get('decision')}" if p.get("decision")
                                 else ""),
         "authorized request + identity context":
@@ -119,7 +124,7 @@ def _token(authorization: str) -> str:
 
 
 @app.post("/api/session")
-def session(role: str = "analyst"):
+def session(role: str = "portfolio_manager"):
     """Demo sign-in: L2 issues a signed session token for a role."""
     subject = next((s for s, r in SUBJECTS.items() if r == role), None)
     if subject is None:
@@ -158,7 +163,8 @@ def run(req: RunRequest, authorization: str = Header(default="")):
         "portfolio": result.get("portfolio"),
         "portfolio_by_year": result.get("portfolio_by_year"),
         "computations": result.get("computations"),
-        "proposal": result.get("proposal"),
+        "trade_checks": result.get("trade_checks"),
+        "trade": result.get("trade"),
         "grounding": result.get("grounding"),
         "entry": [occ[1], occ[2]], "steps": steps, "exit": [occ[max(occ)]],
         "summary": {"occurrences": len(trace.interactions),
@@ -171,14 +177,14 @@ def run(req: RunRequest, authorization: str = Header(default="")):
     }
 
 
-@app.post("/api/proposals/{proposal_id}/{decision}")
-def decide(proposal_id: str, decision: str,
+@app.post("/api/trades/{trade_id}/{decision}")
+def decide(trade_id: str, decision: str,
            authorization: str = Header(default="")):
     if decision not in ("approve", "reject"):
         raise HTTPException(404, "decision must be approve or reject")
-    trace = Trace("approval decision")
+    trace = Trace("override decision")
     try:
-        result = system.decide(proposal_id, decision == "approve",
+        result = system.decide(trade_id, decision == "approve",
                                _token(authorization), ACCESS, trace)
     except PermissionError as e:
         raise HTTPException(401, str(e))

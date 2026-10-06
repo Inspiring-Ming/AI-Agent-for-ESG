@@ -72,11 +72,14 @@ def describe(it):
                 f"(CQ1–CQ{p.get('competency_questions')})")
     if purpose == "action intent" and tool == "portfolio_intensity":
         return f"portfolio carbon intensity (WACI), {p.get('year')}"
-    if purpose == "action intent" and tool == "propose_rebalance":
-        return "propose reweighting"
+    if purpose == "action intent" and tool in ("check_trade", "submit_trade"):
+        return ("pre-trade compliance check" if tool == "check_trade"
+                else "submit trade instruction")
     if purpose == "observation" and tool == "portfolio_intensity":
         return f"WACI {_num(p.get('waci'))}, contributions, coverage"
-    if purpose == "observation" and tool == "propose_rebalance":
+    if purpose == "observation" and tool == "check_trade":
+        return "within mandate" if p.get("compliant") else "breaches mandate"
+    if purpose == "observation" and tool == "submit_trade":
         return f"{p.get('status')}"
     if purpose == "inference request":
         return "what next? (question + observations so far)"

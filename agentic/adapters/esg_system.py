@@ -85,14 +85,3 @@ class HttpAdapter:
         rows = d.get("calculation_results") or []
         return rows[0] if rows else {"status": "error",
                                      "error": d.get("message", "no result")}
-
-    def companies(self, industry: str) -> List[str]:
-        d = self._get("/api/DRservice/companies/all")
-        return (d.get("companies_by_industry") or {}).get(industry, [])
-
-    def health(self) -> bool:
-        try:
-            self._get("/api/DRservice/companies/all")
-            return True
-        except Exception:
-            return False

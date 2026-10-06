@@ -10,8 +10,8 @@ run() {
     -v "$PWD/output:/app/output" -v "$PWD/figures:/app/figures" \
     agent python "$@"
 }
-run run_case.py
-run test_invariants.py
-run run_goals.py --repeats "$REPEATS"
-run independent_mapping.py
+run experiments/run_case.py
+run experiments/test_invariants.py
+run experiments/run_goals.py --repeats "$REPEATS"
+run experiments/independent_mapping.py
 run figures/make_fig_sequence.py

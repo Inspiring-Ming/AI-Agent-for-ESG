@@ -14,7 +14,7 @@ an artifact of the ESG case.
 Source: https://microsoft.github.io/multi-agent-reference-architecture/
 Repo:   https://github.com/microsoft/multi-agent-reference-architecture
 
-Run:  python3 independent_mapping.py [--verify]
+Run:  python experiments/independent_mapping.py [--verify]
   --verify re-fetches the source documents and checks that each quoted
   element name still appears, reporting any that have changed.
 """
@@ -25,7 +25,7 @@ import os
 import sys
 import urllib.request
 
-HERE = os.path.dirname(os.path.abspath(__file__))
+HERE = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))  # repo root
 RAW = ("https://raw.githubusercontent.com/microsoft/"
        "multi-agent-reference-architecture/main/docs")
 

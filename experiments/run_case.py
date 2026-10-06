@@ -11,14 +11,14 @@ Outputs, written to output/:
   component_mapping.json  case component -> responsibility
   variability.json        conditional capabilities and the condition for each
 
-Run (inside the Compose stack):  python run_case.py
+Run (inside the Compose stack):  python experiments/run_case.py
 """
 
 import json
 import os
 import sys
 
-HERE = os.path.dirname(os.path.abspath(__file__))
+HERE = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))  # repo root
 sys.path.insert(0, HERE)
 
 from agentic import system                                         # noqa: E402
@@ -29,8 +29,9 @@ from agentic.trace.recorder import Trace                           # noqa: E402
 
 MAPPING = [
     ("L1", "Web service and portfolio analyst page", "this package"),
-    ("L2", "Access gate: signed session token, role-based entitlements, "
-           "request validation, rate limit, egress check", "this package"),
+    ("L2", "Access gate: signed session token, role-based entitlements "
+           "(portfolio manager, compliance officer), request validation, rate "
+           "limit, egress check", "this package"),
     ("L3", "Agent runtime: model-driven tool-use loop with execution "
            "constraints", "this package"),
     ("L4", "Model access: Claude, inference-contract validation, "
@@ -39,16 +40,19 @@ MAPPING = [
      "existing ESG system"),
     ("L6", "Metric-computation service behind an MCP server",
      "existing ESG system"),
-    ("L6", "Portfolio service (WACI, rebalance evaluation) behind an MCP "
-           "server; entitlement checks; approval gate", "this package"),
+    ("L6", "Portfolio and compliance service (WACI, pre-trade mandate "
+           "check) behind an MCP server; entitlement checks; override "
+           "approval gate", "this package"),
     ("L8", "Docker Compose deployment of all services", "this package"),
 ]
 
 VARIABILITY = [
     {"capability": "Action-policy or approval gate", "responsibility": "L6",
-     "condition": "action is consequential (a portfolio reweighting)",
+     "condition": "action is consequential (a trade instruction)",
      "instantiated": True,
-     "note": "enabled for propose_rebalance only; analytical reads bypass it"},
+     "note": "every submitted trade is checked against the fund mandate "
+             "(action policy); a breaching trade needs a compliance officer's "
+             "override (approval gate); analytical reads bypass both"},
     {"capability": "Asynchronous / event-driven execution",
      "responsibility": "L7", "instantiated": False,
      "condition": "workload requires decoupling or long-running execution",
@@ -78,7 +82,7 @@ def main() -> int:
 
     access = AccessControl()
     trace = Trace("ESG portfolio carbon-intensity question")
-    token = access.issue_token("analyst@enterprise.example")
+    token = access.issue_token("portfolio.manager@enterprise.example")
     result = system.handle(WORKED_EXAMPLE, token, access, trace)
 
     print("=" * 70)

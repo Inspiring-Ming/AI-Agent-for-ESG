@@ -45,8 +45,8 @@
   td.n, th.n { text-align:right; font-variant-numeric:tabular-nums; }
   .bar { height:8px; background:#e9ecf2; border-radius:4px; overflow:hidden; min-width:80px; }
   .bar i { display:block; height:100%; background:var(--warn); }
-  .proposal { border:2px solid var(--warn); }
-  .proposal button { width:auto; padding:8px 16px; margin-right:8px; }
+  .tradecard { border:2px solid var(--warn); }
+  .tradecard button { width:auto; padding:8px 16px; margin-right:8px; }
   .reject { background:#6b7280 !important; }
   h2 { font-size:16px; margin:20px 0 10px; }
   .step { display:grid; grid-template-columns:34px 1fr; gap:12px; margin-bottom:10px; }
@@ -73,10 +73,13 @@
   <p class="lead">For portfolio managers and sustainability analysts who must report a fund's carbon footprint
   (TCFD, SFDR). Give your holdings and ask a question in plain language. A language model (Claude) decides each
   step: it finds the carbon-intensity metric in the ESG knowledge graph, has the ESG system compute it for each
-  holding, computes the portfolio's <b>weighted average carbon intensity (WACI)</b>, and, if you ask, proposes a
-  lower-carbon reweighting that a portfolio manager must approve. It never calculates numbers itself; every figure
-  comes from the ESG system or the portfolio service and is checked.</p>
-  <p class="lead small">Analysis only: no trades are placed. Demo data covers semiconductor companies.</p>
+  holding, computes the portfolio's <b>weighted average carbon intensity (WACI)</b>, and runs a <b>pre-trade
+  compliance check</b> of a proposed trade against the fund's ESG mandate (WACI ≤ 150; at most 25% in holdings with
+  intensity above 300; no holding above 35%). A trade that breaches the mandate is held until a <b>compliance
+  officer</b> approves an override. The agent never calculates numbers itself; every figure comes from the ESG system
+  or the portfolio service and is checked.</p>
+  <p class="lead small">Fund: ESG Semiconductor Fund (illustrative mandate). No order management system is connected,
+  so cleared trades are recorded, never executed. Demo data covers semiconductor companies.</p>
 </header>
 
 <main>
@@ -100,8 +103,9 @@
       <a data-p="P1">Portfolio carbon intensity and its drivers</a>
       <a data-p="P2">Has it improved since 2022?</a>
       <a data-p="P3">A holding with missing data</a>
-      <a data-p="P4">Propose a lower-carbon reweighting</a>
-      <a data-p="P5">A question the data cannot answer</a>
+      <a data-p="P4">Trade within the mandate: submit it</a>
+      <a data-p="P5">Trade breaching the mandate: request an override</a>
+      <a data-p="P6">A question the data cannot answer</a>
     </div>
 
     <div class="legend">
@@ -111,7 +115,7 @@
       <span class="chip" style="background:var(--L3)">L3</span> the agent (decides)<br>
       <span class="chip" style="background:var(--L4)">L4</span> Claude model access<br>
       <span class="chip" style="background:var(--L5)">L5</span> ESG knowledge graph <span class="existing">existing</span><br>
-      <span class="chip" style="background:var(--L6)">L6</span> ESG computation <span class="existing">existing</span>, portfolio service, approval gate
+      <span class="chip" style="background:var(--L6)">L6</span> ESG computation <span class="existing">existing</span>, portfolio &amp; compliance service, override gate
     </div>
   </div>
 
@@ -168,12 +172,14 @@ const PRESETS = {
   P2: { p: BASE, year: "2023", cmp: "2022", q: "Has my portfolio's carbon intensity improved since 2022? What changed?" },
   P3: { p: [["STMicroelectronics NV", 30], ["Infineon Technologies AG", 25], ["Micron Technology Inc", 25], ["Taiwan Semiconductor Manufacturing Co Ltd", 20]],
         year: "2023", cmp: "", q: "What is the carbon intensity of my portfolio, and which holdings drive it?" },
-  P4: { p: BASE, year: "2023", cmp: "", q: "Propose a reweighting that reduces the portfolio's carbon intensity by at least 30%, keeping every holding at 10% or more." },
-  P5: { p: BASE, year: "2023", cmp: "", q: "Which of these stocks should I buy now, and what will their share prices be next quarter?" },
+  P4: { p: BASE, year: "2023", cmp: "", q: "I want to buy 5 percentage points more NXP, funded by selling Infineon. Check it against the fund's mandate and submit it if it complies." },
+  P5: { p: BASE, year: "2023", cmp: "", q: "I want to buy 5 percentage points more Micron, funded by selling Infineon. Check it against the fund's mandate. If it breaches, submit it anyway as an override: Micron has committed to cutting emissions and we want to support the transition." },
+  P6: { p: BASE, year: "2023", cmp: "", q: "Which of these stocks should I buy now, and what will their share prices be next quarter?" },
 };
 
 // ---------------- rendering ----------------
-const STATUS = { success: ["Answered", "var(--ok)"], pending_approval: ["Awaiting approval", "var(--warn)"],
+const STATUS = { success: ["Answered", "var(--ok)"], cleared: ["Trade cleared", "var(--ok)"],
+                 pending_override: ["Awaiting compliance override", "var(--warn)"],
                  unsatisfiable: ["Could not answer", "var(--muted)"], failed: ["Failed", "var(--bad)"] };
 
 function exchange(x) {
@@ -196,17 +202,29 @@ function portfolioCard(p, title) {
     <table><tr><th>Holding</th><th class="n">Weight</th><th class="n">Intensity</th><th class="n">Contribution</th><th></th><th class="n">Share</th></tr>${rows}${miss}</table></div>`;
 }
 
-function proposalCard(pr) {
-  if (!pr) return "";
-  const rows = (pr.weight_changes || []).map(w => `<tr><td>${esc(w.company)}</td><td class="n">${fmt(w.from_pct)}%</td><td class="n">${fmt(w.to_pct)}%</td></tr>`).join("");
-  const pending = pr.status === "pending_approval";
-  return `<div class="card proposal" id="proposal"><b>Proposed reweighting</b>
-    <span class="badge" style="background:var(--warn)">${pending ? "needs portfolio manager approval" : esc(pr.status)}</span>
-    <div class="muted">WACI ${fmt(pr.waci_before)} → <b>${fmt(pr.waci_after)}</b> (${fmt(pr.change_pct)}%)</div>
+const LIMIT = { max_waci: "Portfolio WACI", max_high_intensity_weight_pct: "Weight in holdings above 300",
+                max_single_weight_pct: "Single-holding weight" };
+
+function checkCard(c) {
+  const rows = (c.trades || []).map(t => `<tr><td>${esc(t.company)}</td><td class="n">${fmt(t.from_pct)}%</td><td class="n">${fmt(t.to_pct)}%</td></tr>`).join("");
+  const br = (c.breaches || []).map(b => `<li>${esc(LIMIT[b.limit] || b.limit)}${b.company ? " (" + esc(b.company) + ")" : ""}:
+      <b>${fmt(b.actual)}</b> vs limit ${fmt(b.limit_value)}</li>`).join("");
+  return `<div class="card"><b>Pre-trade compliance check</b>
+    <span class="badge" style="background:${c.compliant ? "var(--ok)" : "var(--bad)"}">${c.compliant ? "within mandate" : "breaches mandate"}</span>
+    <div class="muted">WACI ${fmt(c.waci_before)} → <b>${fmt(c.waci_after)}</b> (${c.waci_change_pct > 0 ? "+" : ""}${fmt(c.waci_change_pct)}%)</div>
     <table><tr><th>Holding</th><th class="n">From</th><th class="n">To</th></tr>${rows}</table>
-    ${pending ? `<div style="margin-top:10px"><button onclick="decide('${pr.proposal_id}','approve')">Approve as portfolio manager</button>
-      <button class="reject" onclick="decide('${pr.proposal_id}','reject')">Reject</button>
-      <button class="link" onclick="decide('${pr.proposal_id}','approve','analyst')">Try approving as the analyst</button></div>` : ""}
+    ${br ? `<ul class="err" style="margin:8px 0 0">${br}</ul>` : ""}</div>`;
+}
+
+function tradeCard(t) {
+  if (!t) return "";
+  const held = t.status === "pending_override";
+  return `<div class="card tradecard" id="trade"><b>Trade submitted</b>
+    <span class="badge" style="background:${held ? "var(--warn)" : "var(--ok)"}">${held ? "held: needs compliance officer override" : esc(t.status)}</span>
+    <div class="muted">${esc(t.note)} (trade ${esc(t.trade_id)})</div>
+    ${held ? `<div style="margin-top:10px"><button onclick="decide('${t.trade_id}','approve')">Approve override as compliance officer</button>
+      <button class="reject" onclick="decide('${t.trade_id}','reject')">Reject</button>
+      <button class="link" onclick="decide('${t.trade_id}','approve','portfolio_manager')">Try approving as the portfolio manager</button></div>` : ""}
     <div id="decision"></div></div>`;
 }
 
@@ -217,7 +235,8 @@ function render(d) {
       <div class="answer">${md(d.answer || d.error || "")}</div></div>`;
   const years = Object.keys(d.portfolio_by_year || {}).sort().reverse();
   years.forEach(y => h += portfolioCard(d.portfolio_by_year[y], `Portfolio carbon intensity (WACI), ${y}`));
-  h += proposalCard(d.proposal);
+  (d.trade_checks || []).forEach(c => h += checkCard(c));
+  h += tradeCard(d.trade);
 
   h += `<h2>How the agent got there</h2>`;
   h += `<div class="step"><div class="num">→</div><div class="body"><div class="title">Request admitted</div>${d.entry.map(exchange).join("")}</div></div>`;
@@ -238,18 +257,18 @@ function render(d) {
   $("out").innerHTML = h;
 }
 
-async function decide(pid, decision, role = "manager") {
+async function decide(tid, decision, role = "compliance_officer") {
   const box = $("decision");
   box.innerHTML = `<p class="muted">Sending decision…</p>`;
   try {
-    const d = await call(`/api/proposals/${pid}/${decision}`, { method: "POST",
+    const d = await call(`/api/trades/${tid}/${decision}`, { method: "POST",
       headers: { "Authorization": `Bearer ${await token(role)}` } });
     const r = d.result;
-    const ok = r.status === "approved" || r.status === "rejected";
+    const ok = r.status === "override_approved" || r.status === "rejected";
     box.innerHTML = `<p><b style="color:${ok ? "var(--ok)" : "var(--bad)"}">${esc(r.status)}</b>
       ${esc(r.note || r.error || "")}${r.decided_by ? ` — by ${esc(r.decided_by)}` : ""}</p>
       ${d.exchanges.map(exchange).join("")}`;
-    if (ok) document.querySelectorAll("#proposal button").forEach(b => b.disabled = true);
+    if (ok) document.querySelectorAll("#trade button").forEach(b => b.disabled = true);
   } catch (e) { box.innerHTML = `<p class="err">${esc(e.message)}</p>`; }
 }
 
@@ -260,7 +279,7 @@ async function run() {
   if ($("cmp").value && $("cmp").value !== body.year) body.compare_year = $("cmp").value;
   try {
     render(await call("/api/run", { method: "POST",
-      headers: { "Content-Type": "application/json", "Authorization": `Bearer ${await token("analyst")}` },
+      headers: { "Content-Type": "application/json", "Authorization": `Bearer ${await token("portfolio_manager")}` },
       body: JSON.stringify(body) }));
   } catch (e) { $("out").innerHTML = `<div class="card err">${esc(e.message)}</div>`; }
   finally { btn.disabled = false; btn.textContent = "Ask the agent"; }

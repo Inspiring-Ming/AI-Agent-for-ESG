@@ -6,14 +6,14 @@ responsibility that owns it and returns the observation to the model:
 
     discover_metrics, get_metric_definition         -> L5 (T4)
     compute_metric, portfolio_intensity,
-    propose_rebalance                               -> L6 (T5)
+    check_trade, submit_trade                       -> L6 (T5)
     every model decision                            -> L4 (T3)
 
 L3 never executes a capability itself and never takes a value from model text.
 Execution constraints owned by L3:
-  * the model may act only on the request's holdings and years;
-  * holdings and their intensities passed to portfolio tools are assembled by
-    L3 from L6 results, never supplied by the model;
+  * the model may act only on the request's fund, holdings and years;
+  * holdings and their intensities passed to portfolio and trade tools are
+    assembled by L3 from L6 results, never supplied by the model;
   * number check: every number in the final answer must occur in the request
     or in a result returned by L5 or L6; a draft that fails is returned to the
     model once for revision;
@@ -28,8 +28,9 @@ import re
 from typing import Any, Dict, List, Optional, Tuple
 
 SYSTEM = """You are an ESG portfolio analyst assistant at an asset manager.
-You answer a portfolio manager's question about the carbon profile of their
-portfolio, using only the tools provided.
+You answer a portfolio manager's questions about the carbon profile of their
+fund, and check proposed trades against the fund's ESG mandate, using only the
+tools provided.
 
 Rules:
 - Use discover_metrics and get_metric_definition to identify which metric in
@@ -41,18 +42,30 @@ Rules:
   must come from the request or a tool result.
 - Holdings whose metric cannot be computed must be reported with the reason
   the tool gave; do not substitute values.
-- Only if the question asks to reduce the portfolio's carbon intensity or to
-  reweight, call propose_rebalance with target weights over the current
-  holdings summing to 100. Such a proposal needs a portfolio manager's
-  approval before it takes effect; say so.
+- For a proposed trade, compute the intensities it needs first, then
+  use check_trade. Express a trade as changes in percentage points of weight
+  over current holdings that sum to zero (buys positive, sells negative).
+- Call submit_trade only if the manager asks to submit, place or execute the
+  trade. If the check shows a breach, submit only if the manager asks for an
+  override, and give their reason as the justification; such a trade is held
+  until a compliance officer approves it. Otherwise explain the breach and, if
+  asked, suggest a compliant alternative verified with check_trade.
 - If the question needs information the tools cannot provide (for example
-  prices, returns, forecasts or trades), say what cannot be answered and do not
+  share prices, returns, forecasts or buy/sell recommendations), say what
+  cannot be answered and do not
   call tools that do not help.
 - Before each set of tool calls, write one short sentence giving your reason.
 - Finish with a concise answer of at most six sentences."""
 
 _METRIC = {"type": "string", "description": "Metric name exactly as discovered"}
 _YEAR = {"type": "string", "description": "Four-digit reporting year"}
+_TRADES = {"type": "array",
+           "description": "Weight changes over current holdings, summing to 0",
+           "items": {"type": "object",
+                     "properties": {"company": {"type": "string"},
+                                    "change_pct_points": {"type": "number"}},
+                     "required": ["company", "change_pct_points"],
+                     "additionalProperties": False}}
 TOOLS = [
     {"name": "discover_metrics",
      "description": "List the ESG metrics in the request's reporting category, "
@@ -89,21 +102,27 @@ TOOLS = [
                       "required": ["metric", "year"],
                       "additionalProperties": False},
      "strict": True},
-    {"name": "propose_rebalance",
-     "description": "Propose new portfolio weights and get the resulting WACI. "
-                    "The proposal requires a portfolio manager's approval.",
+    {"name": "check_trade",
+     "description": "Pre-trade compliance check: apply a trade to the current "
+                    "weights and test the result against the fund's ESG "
+                    "mandate. Returns the WACI before and after, the mandate "
+                    "limits, and any breaches. Changes nothing.",
      "input_schema": {"type": "object",
-                      "properties": {
-                          "metric": _METRIC, "year": _YEAR,
-                          "target_weights": {
-                              "type": "array",
-                              "items": {"type": "object",
-                                        "properties": {
-                                            "company": {"type": "string"},
-                                            "weight_pct": {"type": "number"}},
-                                        "required": ["company", "weight_pct"],
-                                        "additionalProperties": False}}},
-                      "required": ["metric", "year", "target_weights"],
+                      "properties": {"metric": _METRIC, "year": _YEAR,
+                                     "trades": _TRADES},
+                      "required": ["metric", "year", "trades"],
+                      "additionalProperties": False},
+     "strict": True},
+    {"name": "submit_trade",
+     "description": "Submit a trade instruction. The compliance check is run "
+                    "again; a compliant trade is cleared, a breaching trade is "
+                    "held until a compliance officer approves an override.",
+     "input_schema": {"type": "object",
+                      "properties": {"metric": _METRIC, "year": _YEAR,
+                                     "trades": _TRADES,
+                                     "justification": {"type": "string"}},
+                      "required": ["metric", "year", "trades",
+                                   "justification"],
                       "additionalProperties": False},
      "strict": True},
 ]
@@ -158,7 +177,8 @@ class AgentRuntime:
         lines = [f"{h['company']}: {h['weight_pct']}%" for h in goal["holdings"]]
         years = goal["year"] + (f" (comparison year: {goal['compare_year']})"
                                 if goal.get("compare_year") else "")
-        return (f"Industry: {goal['industry']}. Category: {goal['category']}.\n"
+        return (f"Fund: {goal['fund']}. Industry: {goal['industry']}. "
+                f"Category: {goal['category']}.\n"
                 f"Reporting year: {years}.\n"
                 f"Portfolio holdings (weight):\n  " + "\n  ".join(lines) +
                 f"\nQuestion: {goal['question']}")
@@ -257,19 +277,22 @@ class AgentRuntime:
             wc["l6_invocations"] += 1
             return res, s
 
-        if name == "propose_rebalance":
+        if name in ("check_trade", "submit_trade"):
             holdings = self._holdings_for(args["metric"], year)
+            extra = ({"justification": args.get("justification")}
+                     if name == "submit_trade" else {})
             s = [rec("L3", "L6", "action intent", ttype="T5", tool=name,
-                     year=year)]
+                     year=year, trades=len(args["trades"]))]
             res = self._act.invoke(name, principal=principal,
-                                   holdings=holdings,
-                                   target_weights=args["target_weights"],
-                                   year=year)
+                                   fund=goal["fund"], holdings=holdings,
+                                   trades=args["trades"], year=year, **extra)
             s.append(rec("L6", "L3", "observation", ttype="T5", tool=name,
-                         status=res["status"],
-                         proposal_id=res.get("proposal_id")))
-            if res["status"] in ("pending_approval", "success"):
-                wc["proposal"] = res
+                         status=res["status"], compliant=res.get("compliant"),
+                         trade_id=res.get("trade_id")))
+            if name == "check_trade" and res["status"] == "success":
+                wc["trade_checks"].append(res)
+            if name == "submit_trade" and res["status"] != "error":
+                wc["trade"] = res
             wc["l6_invocations"] += 1
             return res, s
 
@@ -281,6 +304,7 @@ class AgentRuntime:
         self.working_context = {"goal": dict(goal), "principal": principal,
                                 "model_calls": 0, "plan": [],
                                 "computations": {}, "portfolio": {},
+                                "trade_checks": [],
                                 "l6_invocations": 0, "evidence": set(),
                                 "revisions": 0, "flagged": [],
                                 "status": "running"}
@@ -337,12 +361,12 @@ class AgentRuntime:
                 final_text = text
                 wc["plan"][-1]["action"] = "answer"
                 wc["status"] = (
-                    "pending_approval" if (wc.get("proposal") or {}).get(
-                        "status") == "pending_approval"
-                    else "success" if wc["portfolio"] or any(
+                    (wc.get("trade") or {}).get("status")   # cleared / pending_override
+                    or ("success" if wc["portfolio"] or wc["trade_checks"]
+                        or any(
                         c["status"] == "success"
                         for c in wc["computations"].values())
-                    else "unsatisfiable")
+                        else "unsatisfiable"))
                 break
 
             results = []
@@ -366,18 +390,17 @@ class AgentRuntime:
         return self._result(final_text)
 
     # ------------------------------------------------------- approval resume
-    def decide_proposal(self, proposal_id: str, approve: bool,
-                        principal: Optional[Dict[str, Any]]) -> Dict[str, Any]:
-        """Route an approver's decision to the L6 approval gate."""
-        self._rec("L3", "L6", "approval decision", ttype="T5",
-                  proposal_id=proposal_id,
+    def decide_trade(self, trade_id: str, approve: bool,
+                     principal: Optional[Dict[str, Any]]) -> Dict[str, Any]:
+        """Route a compliance officer's override decision to the L6 gate."""
+        self._rec("L3", "L6", "override decision", ttype="T5",
+                  trade_id=trade_id,
                   decision="approve" if approve else "reject",
                   trace_id=(principal or {}).get("trace_id"))
         try:
-            res = self._act.decide(proposal_id, approve, principal)
+            res = self._act.decide(trade_id, approve, principal)
         except (PermissionError, ValueError) as e:
-            res = {"proposal_id": proposal_id, "status": "refused",
-                   "error": str(e)}
+            res = {"trade_id": trade_id, "status": "refused", "error": str(e)}
         self._rec("L6", "L3", "observation", ttype="T5", status=res["status"])
         return res
 
@@ -416,7 +439,8 @@ class AgentRuntime:
                "computations": comps,
                "portfolio": wc["portfolio"].get(str(goal["year"])),
                "portfolio_by_year": wc["portfolio"],
-               "proposal": wc.get("proposal"),
+               "trade_checks": wc["trade_checks"],
+               "trade": wc.get("trade"),
                "metric": ctx.get("metric"),
                "framework": ctx.get("framework"),
                "provenance": {"knowledge_graph": ctx.get("provenance"),

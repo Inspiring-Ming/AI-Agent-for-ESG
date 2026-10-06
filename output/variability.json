@@ -3,9 +3,9 @@
     {
       "capability": "Action-policy or approval gate",
       "responsibility": "L6",
-      "condition": "action is consequential (a portfolio reweighting)",
+      "condition": "action is consequential (a trade instruction)",
       "instantiated": true,
-      "note": "enabled for propose_rebalance only; analytical reads bypass it"
+      "note": "every submitted trade is checked against the fund mandate (action policy); a breaching trade needs a compliance officer's override (approval gate); analytical reads bypass both"
     },
     {
       "capability": "Asynchronous / event-driven execution",

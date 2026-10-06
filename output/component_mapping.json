@@ -8,7 +8,7 @@
     },
     {
       "responsibility": "L2",
-      "component": "Access gate: signed session token, role-based entitlements, request validation, rate limit, egress check",
+      "component": "Access gate: signed session token, role-based entitlements (portfolio manager, compliance officer), request validation, rate limit, egress check",
       "origin": "this package"
     },
     {
@@ -33,7 +33,7 @@
     },
     {
       "responsibility": "L6",
-      "component": "Portfolio service (WACI, rebalance evaluation) behind an MCP server; entitlement checks; approval gate",
+      "component": "Portfolio and compliance service (WACI, pre-trade mandate check) behind an MCP server; entitlement checks; override approval gate",
       "origin": "this package"
     },
     {

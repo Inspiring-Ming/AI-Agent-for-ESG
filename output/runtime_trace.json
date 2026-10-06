@@ -44,9 +44,9 @@
       "purpose": "authorized request + identity context",
       "ttype": "T2",
       "payload": {
-        "subject": "analyst@enterprise.example",
-        "role": "analyst",
-        "trace_id": "4583dff24140"
+        "subject": "portfolio.manager@enterprise.example",
+        "role": "portfolio_manager",
+        "trace_id": "864cb04640a3"
       },
       "elapsed_ms": 0.1
     },
@@ -59,7 +59,7 @@
       "payload": {
         "provider": "claude-opus-5-5"
       },
-      "elapsed_ms": 281.8
+      "elapsed_ms": 276.6
     },
     {
       "seq": 4,
@@ -70,7 +70,7 @@
       "payload": {
         "contract": "success"
       },
-      "elapsed_ms": 2823.8
+      "elapsed_ms": 2302.2
     },
     {
       "seq": 5,
@@ -80,9 +80,9 @@
       "ttype": "T4",
       "payload": {
         "category": "Greenhouse Gas Emissions",
-        "trace_id": "4583dff24140"
+        "trace_id": "864cb04640a3"
       },
-      "elapsed_ms": 2823.8
+      "elapsed_ms": 2302.3
     },
     {
       "seq": 6,
@@ -93,7 +93,7 @@
       "payload": {
         "count": 4
       },
-      "elapsed_ms": 3009.3
+      "elapsed_ms": 2519.4
     },
     {
       "seq": 7,
@@ -104,7 +104,7 @@
       "payload": {
         "provider": "claude-opus-5-5"
       },
-      "elapsed_ms": 3009.4
+      "elapsed_ms": 2519.4
     },
     {
       "seq": 8,
@@ -115,7 +115,7 @@
       "payload": {
         "contract": "success"
       },
-      "elapsed_ms": 5179.1
+      "elapsed_ms": 4743.5
     },
     {
       "seq": 9,
@@ -125,9 +125,9 @@
       "ttype": "T4",
       "payload": {
         "metric": "GHGEmissionIntensity",
-        "trace_id": "4583dff24140"
+        "trace_id": "864cb04640a3"
       },
-      "elapsed_ms": 5179.1
+      "elapsed_ms": 4743.5
     },
     {
       "seq": 10,
@@ -140,7 +140,7 @@
         "model": "GHGEmissionIntensityModel",
         "competency_questions": 5
       },
-      "elapsed_ms": 5603.4
+      "elapsed_ms": 5117.0
     },
     {
       "seq": 11,
@@ -151,7 +151,7 @@
       "payload": {
         "provider": "claude-opus-5-5"
       },
-      "elapsed_ms": 5603.4
+      "elapsed_ms": 5117.1
     },
     {
       "seq": 12,
@@ -162,7 +162,7 @@
       "payload": {
         "contract": "success"
       },
-      "elapsed_ms": 10211.2
+      "elapsed_ms": 10056.2
     },
     {
       "seq": 13,
@@ -176,7 +176,7 @@
         "year": "2023",
         "metric": "GHGEmissionIntensity"
       },
-      "elapsed_ms": 10211.3
+      "elapsed_ms": 10056.3
     },
     {
       "seq": 14,
@@ -190,7 +190,7 @@
         "status": "success",
         "value": "45.4703"
       },
-      "elapsed_ms": 10538.0
+      "elapsed_ms": 10331.8
     },
     {
       "seq": 15,
@@ -204,7 +204,7 @@
         "year": "2023",
         "metric": "GHGEmissionIntensity"
       },
-      "elapsed_ms": 10538.0
+      "elapsed_ms": 10331.8
     },
     {
       "seq": 16,
@@ -218,7 +218,7 @@
         "status": "success",
         "value": "28.9938"
       },
-      "elapsed_ms": 10763.3
+      "elapsed_ms": 10558.5
     },
     {
       "seq": 17,
@@ -232,7 +232,7 @@
         "year": "2023",
         "metric": "GHGEmissionIntensity"
       },
-      "elapsed_ms": 10763.4
+      "elapsed_ms": 10558.6
     },
     {
       "seq": 18,
@@ -246,7 +246,7 @@
         "status": "success",
         "value": "439.9378"
       },
-      "elapsed_ms": 10992.3
+      "elapsed_ms": 10830.3
     },
     {
       "seq": 19,
@@ -260,7 +260,7 @@
         "year": "2023",
         "metric": "GHGEmissionIntensity"
       },
-      "elapsed_ms": 10992.3
+      "elapsed_ms": 10830.3
     },
     {
       "seq": 20,
@@ -273,7 +273,7 @@
         "company": "Taiwan Semiconductor Manufacturing Co Ltd",
         "status": "error"
       },
-      "elapsed_ms": 11197.5
+      "elapsed_ms": 11038.0
     },
     {
       "seq": 21,
@@ -284,7 +284,7 @@
       "payload": {
         "provider": "claude-opus-5-5"
       },
-      "elapsed_ms": 11197.6
+      "elapsed_ms": 11038.0
     },
     {
       "seq": 22,
@@ -295,7 +295,7 @@
       "payload": {
         "contract": "success"
       },
-      "elapsed_ms": 13438.4
+      "elapsed_ms": 16736.8
     },
     {
       "seq": 23,
@@ -307,7 +307,7 @@
         "tool": "portfolio_intensity",
         "year": "2023"
       },
-      "elapsed_ms": 13439.1
+      "elapsed_ms": 16736.9
     },
     {
       "seq": 24,
@@ -320,7 +320,7 @@
         "status": "success",
         "waci": 163.59
       },
-      "elapsed_ms": 13518.0
+      "elapsed_ms": 16796.3
     },
     {
       "seq": 25,
@@ -331,7 +331,7 @@
       "payload": {
         "provider": "claude-opus-5-5"
       },
-      "elapsed_ms": 13518.0
+      "elapsed_ms": 16796.4
     },
     {
       "seq": 26,
@@ -342,7 +342,7 @@
       "payload": {
         "contract": "success"
       },
-      "elapsed_ms": 18211.4
+      "elapsed_ms": 22280.8
     },
     {
       "seq": 27,
@@ -354,7 +354,7 @@
         "status": "success",
         "waci": 163.59
       },
-      "elapsed_ms": 18212.1
+      "elapsed_ms": 22281.5
     }
   ]
 }

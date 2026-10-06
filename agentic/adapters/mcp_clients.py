@@ -1,7 +1,8 @@
 """MCP clients for the L5 and L6 servers.
 
 The agent reaches the existing system's knowledge graph (L5) and computation
-service (L6), and the portfolio service (L6), only through these clients.
+service (L6), and the portfolio and compliance service (L6), only through
+these clients.
 """
 
 import asyncio
@@ -68,7 +69,7 @@ class McpCompute:
 
 
 class McpPortfolio:
-    """Portfolio analytics backend for the L6 action runtime, via MCP."""
+    """Portfolio and compliance backend for the L6 action runtime, via MCP."""
 
     mechanism = "MCP (streamable HTTP)"
 
@@ -81,7 +82,7 @@ class McpPortfolio:
             args["previous"] = previous
         return _call(self.url, "portfolio_intensity", args)
 
-    def evaluate_rebalance(self, holdings, target_weights, year):
-        return _call(self.url, "evaluate_rebalance",
-                     {"holdings": holdings, "target_weights": target_weights,
+    def check_trade(self, fund, holdings, trades, year):
+        return _call(self.url, "check_trade",
+                     {"fund": fund, "holdings": holdings, "trades": trades,
                       "year": str(year)})

@@ -24,13 +24,12 @@ _SECRET = os.environ.get("SESSION_SECRET", "replication-package-secret").encode(
 # Identity -> role -> entitlements. Entitlements are propagated to L3, L5 and
 # L6 (T2); the responsibilities owning a resource decide whether they suffice.
 ROLES = {
-    "analyst": ["esg.metric.compute", "esg.portfolio.analyze",
-                "esg.portfolio.propose"],
-    "manager": ["esg.metric.compute", "esg.portfolio.analyze",
-                "esg.portfolio.approve"],
+    "portfolio_manager": ["esg.metric.compute", "esg.portfolio.analyze",
+                          "trade.submit"],
+    "compliance_officer": ["esg.portfolio.analyze", "trade.override.approve"],
 }
-SUBJECTS = {"analyst@enterprise.example": "analyst",
-            "portfolio.manager@enterprise.example": "manager"}
+SUBJECTS = {"portfolio.manager@enterprise.example": "portfolio_manager",
+            "compliance.officer@enterprise.example": "compliance_officer"}
 
 
 class AccessControl:
@@ -96,9 +95,9 @@ class AccessControl:
     @staticmethod
     def _validate(request: Dict[str, Any]) -> None:
         """Input validation at the boundary."""
-        if "proposal_id" in request:
-            if not str(request["proposal_id"]).isalnum():
-                raise ValueError("invalid request: malformed proposal id")
+        if "trade_id" in request:
+            if not str(request["trade_id"]).isalnum():
+                raise ValueError("invalid request: malformed trade id")
             return
         holdings = request.get("holdings")
         if not isinstance(holdings, list) or not 1 <= len(holdings) <= 30:

@@ -10,18 +10,18 @@ measured outcomes rather than assertions.
   I2 Execution-State--Knowledge      execution-local state in L3; reusable
                                      definitions retrieved through L5
   I3 System-Access--Resource-Authority  L2 admits; L6 retains enforcement,
-                                     including the approval gate
+                                     including the override approval gate
   I4 Evidence-Ownership--Correlation each responsibility emits local evidence;
                                      L9 correlates
 
-Run (inside the Compose stack):  python test_invariants.py
+Run (inside the Compose stack):  python experiments/test_invariants.py
 """
 
 import json
 import os
 import sys
 
-HERE = os.path.dirname(os.path.abspath(__file__))
+HERE = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))  # repo root
 sys.path.insert(0, HERE)
 
 from agentic import system                                         # noqa: E402
@@ -78,9 +78,9 @@ def main() -> int:
     print("=" * 70)
     print(f"mechanism: {system.MECHANISM}   model: {infer.provider_name}\n")
 
-    analyst = access.issue_token("analyst@enterprise.example")
-    manager = access.issue_token("portfolio.manager@enterprise.example")
-    principal = access.admit(analyst, REQUEST)
+    pm = access.issue_token("portfolio.manager@enterprise.example")
+    officer = access.issue_token("compliance.officer@enterprise.example")
+    principal = access.admit(pm, REQUEST)
 
     # ---------------- I1: Coordination -- Execution ----------------------
     print("I1  Coordination--Execution")
@@ -108,7 +108,7 @@ def main() -> int:
 
     l3_can_execute = any(hasattr(agent, m) for m in
                          ("calculate", "execute", "portfolio_intensity",
-                          "evaluate_rebalance"))
+                          "check_trade", "submit_trade"))
     record("I1",
            "L3 must not be able to execute an enterprise capability directly",
            "the coordinator exposes no execution mechanism of its own",
@@ -143,7 +143,7 @@ def main() -> int:
 
     # ---------------- I3: System-Access -- Resource-Authority ------------
     print("\nI3  System-Access--Resource-Authority")
-    no_ent = access.admit(analyst, REQUEST, entitlements=[])
+    no_ent = access.admit(pm, REQUEST, entitlements=[])
     try:
         act.invoke("compute_metric", principal=no_ent,
                    metric="GHGEmissionIntensity", company=BASE[0]["company"],
@@ -165,39 +165,42 @@ def main() -> int:
     record("I3", "an unauthenticated request must not reach coordination",
            "L2 refuses the request before L3 is engaged", obs, ok)
 
-    # A consequential action stops at the L6 approval gate ...
+    # A trade breaching the fund mandate stops at the L6 approval gate ...
     holdings = [{"company": h["company"], "weight_pct": h["weight_pct"],
                  "intensity": (float(computed[h["company"]])
                                if h["company"] in computed else None),
                  "reason": None} for h in BASE]
-    target = [{"company": h["company"], "weight_pct": w}
-              for h, w in zip(BASE, (30, 40, 10, 20))]
-    prop = act.invoke("propose_rebalance", principal=principal,
-                      holdings=holdings, target_weights=target, year="2023")
-    pid = prop.get("proposal_id")
-    # ... and cannot be approved by a principal without the approval
-    # entitlement, nor by the principal who requested it.
+    breach = [{"company": "Micron Technology Inc", "change_pct_points": 5},
+              {"company": "Infineon Technologies AG", "change_pct_points": -5}]
+    sub = act.invoke("submit_trade", principal=principal,
+                     fund=system.DEFAULTS["fund"], holdings=holdings,
+                     trades=breach, year="2023", justification="probe")
+    tid = sub.get("trade_id")
+    # ... and cannot be overridden by a principal without the override
+    # entitlement, nor by the principal who submitted it.
     refusals = []
-    for who, p in (("analyst", access.admit(analyst, {"proposal_id": pid})),
-                   ("requester holding the approval entitlement",
-                    access.admit(analyst, {"proposal_id": pid},
-                                 entitlements=["esg.portfolio.approve"]))):
+    for who, p in (("portfolio manager", access.admit(pm, {"trade_id": tid})),
+                   ("submitter holding the override entitlement",
+                    access.admit(pm, {"trade_id": tid},
+                                 entitlements=["trade.override.approve"]))):
         try:
-            act.decide(pid, True, p)
+            act.decide(tid, True, p)
             refusals.append(f"{who}: approved")
         except PermissionError as e:
             refusals.append(f"{who}: refused ({e})")
-    approved = act.decide(pid, True, access.admit(manager, {"proposal_id": pid}))
+    approved = act.decide(tid, True, access.admit(officer, {"trade_id": tid}))
     record("I3",
-           "a consequential action must not take effect without approval "
-           "by an authorized principal other than the requester",
-           "proposal held pending; refused for the analyst and for the "
-           "requester; accepted from the portfolio manager",
-           f"proposal status={prop['status']}; " + "; ".join(refusals)
-           + f"; portfolio manager: {approved['status']}",
-           prop["status"] == "pending_approval"
+           "a trade breaching the mandate must not proceed without an override "
+           "by an authorized principal other than the submitter",
+           "trade held pending; override refused for the portfolio manager "
+           "and for the submitter; accepted from the compliance officer",
+           f"trade status={sub['status']} (breaches: "
+           f"{[b['limit'] for b in sub.get('breaches', [])]}); "
+           + "; ".join(refusals)
+           + f"; compliance officer: {approved['status']}",
+           sub["status"] == "pending_override"
            and all("refused" in r for r in refusals)
-           and approved["status"] == "approved")
+           and approved["status"] == "override_approved")
 
     # ---------------- I4: Evidence-Ownership -- Correlation --------------
     print("\nI4  Evidence-Ownership--Correlation")

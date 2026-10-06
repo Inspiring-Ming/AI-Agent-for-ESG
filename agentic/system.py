@@ -7,11 +7,12 @@ FastAPI service or from an experiment script:
     L2 -> L3  (T2)  authorized request + identity and trace context
     L3 <-> L4 (T3)  every model decision
     L3 <-> L5 (T4)  knowledge-graph retrieval, through MCP
-    L3 <-> L6 (T5)  metric computation and portfolio analytics, through MCP
+    L3 <-> L6 (T5)  metric computation, portfolio analytics and pre-trade
+                    compliance, through MCP
     L3 -> L1  (T1)  answer, after the L2 egress check
 
-`decide` is the path of a portfolio manager's approval decision on a proposed
-rebalancing: L1 -> L2 -> L3 -> L6 approval gate -> L3 -> L1.
+`decide` is the path of a compliance officer's decision on a trade held for an
+override: L1 -> L2 -> L3 -> L6 approval gate -> L3 -> L1.
 """
 
 import os
@@ -25,7 +26,8 @@ from agentic.responsibilities.l6_act import ActionRuntime
 from agentic.trace.recorder import Trace
 
 MECHANISM = "MCP (streamable HTTP)"
-DEFAULTS = {"industry": "semiconductors", "category": "Greenhouse Gas Emissions"}
+DEFAULTS = {"fund": "ESG Semiconductor Fund", "industry": "semiconductors",
+            "category": "Greenhouse Gas Emissions"}
 
 
 def knowledge() -> McpKnowledge:
@@ -41,7 +43,7 @@ def compute_backend() -> McpCompute:
 
 
 def portfolio_backend() -> McpPortfolio:
-    """L6 backend: the portfolio analytics service, via MCP."""
+    """L6 backend: the portfolio and compliance service, via MCP."""
     return McpPortfolio(os.environ.get("MCP_PORTFOLIO_URL",
                                        "http://localhost:8103/mcp"))
 
@@ -60,7 +62,7 @@ def build_agent(trace: Trace, ground=None, act: Optional[ActionRuntime] = None,
 
 def handle(request: Dict[str, Any], token: str, access: AccessControl,
            trace: Trace) -> Dict[str, Any]:
-    """Run one portfolio question through L1 -> L2 -> L3 -> L1.
+    """Run one question through L1 -> L2 -> L3 -> L1.
 
     Raises PermissionError / ValueError when L2 refuses the request.
     """
@@ -80,17 +82,17 @@ def handle(request: Dict[str, Any], token: str, access: AccessControl,
     return access.egress(result)
 
 
-def decide(proposal_id: str, approve: bool, token: str,
+def decide(trade_id: str, approve: bool, token: str,
            access: AccessControl, trace: Trace) -> Dict[str, Any]:
-    """Route an approval decision through L1 -> L2 -> L3 -> L6 -> L3 -> L1."""
-    trace.record("L1", "L2", "approval decision", ttype="T1",
-                 proposal_id=proposal_id)
-    principal = access.admit(token, {"proposal_id": proposal_id})
+    """Route an override decision through L1 -> L2 -> L3 -> L6 -> L3 -> L1."""
+    trace.record("L1", "L2", "override decision", ttype="T1",
+                 trade_id=trade_id)
+    principal = access.admit(token, {"trade_id": trade_id})
     trace.record("L2", "L3", "authorized request + identity context",
                  ttype="T2", subject=principal["subject"],
                  role=principal["role"], trace_id=principal["trace_id"])
     agent = AgentRuntime(None, None, action_runtime(), trace)
-    result = agent.decide_proposal(proposal_id, approve, principal)
+    result = agent.decide_trade(trade_id, approve, principal)
     trace.record("L3", "L1", "decision outcome", ttype="T1",
                  status=result["status"])
     return access.egress(result)

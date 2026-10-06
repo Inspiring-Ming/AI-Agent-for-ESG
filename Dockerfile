@@ -9,4 +9,4 @@ COPY mcp_servers ./mcp_servers
 COPY service ./service
 COPY ui ./ui
 COPY figures ./figures
-COPY *.py ./
+COPY experiments ./experiments

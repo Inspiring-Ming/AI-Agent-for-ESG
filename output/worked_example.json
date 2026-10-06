@@ -23,23 +23,26 @@
   },
   "result": {
     "status": "success",
-    "answer": "Your portfolio's 2023 carbon intensity (WACI) is **163.59 t CO2e per USD million of revenue**, but this only covers 80% of the portfolio's weight. The metric used is GHGEmissionIntensity, which is a company's Scope 1 plus Scope 2 emissions divided by its revenue.\n\n- **Micron Technology Inc drives most of it:** its intensity is 439.94, which contributes 137.48 points, or 84.0% of the WACI, from only a 25% weight.\n- **STMicroelectronics NV** (intensity 45.47) adds 17.05 points, or 10.4%.\n- **Infineon Technologies AG** (intensity 28.99) adds 9.06 points, or 5.5%.\n- **Taiwan Semiconductor Manufacturing Co Ltd (20% weight) is left out:** its intensity couldn't be computed because the revenue figure is missing (\"Missing input values for: ['Revenue']\"). No substitute value was used, so adding it later could change the portfolio figure.",
+    "answer": "Your portfolio's 2023 weighted average carbon intensity (WACI) is **163.59 t CO2e per USD million revenue**, but it covers only 80% of the portfolio's weight. The metric is GHGEmissionIntensity, defined as (Scope 1 + Scope 2 emissions) / revenue.\n\n- **Micron Technology Inc drives the result.** Its intensity is 439.94, and at a 25% weight it contributes 137.48, or 84.0% of the WACI.\n- **STMicroelectronics NV** (intensity 45.47, 30% weight) contributes 17.05, or 10.4%.\n- **Infineon Technologies AG** (intensity 28.99, 25% weight) contributes 9.06, or 5.5%.\n- **Taiwan Semiconductor Manufacturing Co Ltd** (20% weight) is missing. Its intensity couldn't be calculated because the tool reported \"Missing input values for: ['Revenue']\".\n\nThe 163.59 is simply the sum of the three covered holdings' contributions, so TSMC adds nothing to it. The full-portfolio figure could be higher or lower once TSMC's revenue data is available.",
     "grounding": {
       "numbers": [
         2023.0,
         163.59,
         80.0,
         439.94,
+        25.0,
         137.48,
         84.0,
-        25.0,
         45.47,
+        30.0,
         17.05,
         10.4,
         28.99,
+        25.0,
         9.06,
         5.5,
-        20.0
+        20.0,
+        163.59
       ],
       "unsupported": [],
       "grounded": true,

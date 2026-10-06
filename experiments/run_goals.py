@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Goal-variation experiment (Section V).
 
-Runs the same deployed request path against portfolio questions that differ in
+Runs the same deployed request path against portfolio and trade questions that differ in
 what they require, each several times, and records for every execution the
 action sequence the agent chose, the interaction occurrences produced, the
 interaction types realized, and whether the answer passed the number check.
@@ -11,7 +11,7 @@ that require different things should produce different action sequences with
 the same components. Because the planner is a language model, each question is
 repeated to measure whether its path is consistent.
 
-Run (inside the Compose stack):  python run_goals.py [--repeats 3]
+Run (inside the Compose stack):  python experiments/run_goals.py [--repeats 3]
 """
 
 import argparse
@@ -19,7 +19,7 @@ import json
 import os
 import sys
 
-HERE = os.path.dirname(os.path.abspath(__file__))
+HERE = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))  # repo root
 sys.path.insert(0, HERE)
 
 from agentic import system                                         # noqa: E402
@@ -40,7 +40,7 @@ def main() -> int:
         for rep in range(1, args.repeats + 1):
             trace = Trace(gid)
             result = system.handle(
-                request, access.issue_token("analyst@enterprise.example"),
+                request, access.issue_token("portfolio.manager@enterprise.example"),
                 access, trace)
             types = trace.occurrences_by_type()
             pf = result.get("portfolio") or {}
@@ -54,7 +54,12 @@ def main() -> int:
                    "waci": pf.get("waci"),
                    "covered_weight_pct": pf.get("covered_weight_pct"),
                    "change": pf.get("change"),
-                   "proposal": (result.get("proposal") or {}).get("status"),
+                   "trade_checks": [{"compliant": c.get("compliant"),
+                                     "waci_after": c.get("waci_after"),
+                                     "breaches": [b["limit"] for b in
+                                                  c.get("breaches", [])]}
+                                    for c in result.get("trade_checks", [])],
+                   "trade": (result.get("trade") or {}).get("status"),
                    "model_calls": result.get("model_calls"),
                    "l6_invocations": result.get("l6_invocations"),
                    "grounded": result["grounding"]["grounded"],
@@ -66,7 +71,8 @@ def main() -> int:
             print(f"{gid}#{rep} {row['status']:<16} occ={row['occurrences']:<3}"
                   f" {row['types_realized']} L6={row['l6_invocations']}"
                   f" model={row['model_calls']} waci={row['waci']}"
-                  f" proposal={row['proposal']} grounded={row['grounded']}"
+                  f" checks={row['trade_checks']} trade={row['trade']}"
+                  f" grounded={row['grounded']}"
                   f" revised={row['revised']} {row['flagged_in_draft']}")
             print("      " + " > ".join(row["actions"]))
 
