@@ -41,7 +41,7 @@
         "L5",
         "L6"
       ],
-      "value": "0.0710",
+      "value": "45.4703",
       "measurement_method": "calculation_model",
       "explained": true,
       "rationale": "4 candidates; selected 'GHGEmissionIntensity'"
@@ -71,7 +71,7 @@
         "L5",
         "L6"
       ],
-      "value": "0.0710",
+      "value": "45.4703",
       "measurement_method": "calculation_model",
       "explained": false,
       "rationale": "4 candidates; selected 'GHGEmissionIntensity'"
@@ -139,7 +139,7 @@
         "L5",
         "L6"
       ],
-      "value": "0.0710",
+      "value": "45.4703",
       "measurement_method": "calculation_model",
       "explained": true,
       "rationale": "4 candidates; selected 'GHGEmissionIntensity'"
