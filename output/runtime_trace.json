@@ -46,7 +46,7 @@
       "ttype": "T2",
       "payload": {
         "subject": "analyst@enterprise.example",
-        "trace_id": "e6913d5bfd50"
+        "trace_id": "0f5454b82677"
       },
       "elapsed_ms": 0.0
     },
@@ -59,7 +59,7 @@
       "payload": {
         "category": "Greenhouse Gas Emissions",
         "industry": "semiconductors",
-        "trace_id": "e6913d5bfd50"
+        "trace_id": "0f5454b82677"
       },
       "elapsed_ms": 0.1
     },
@@ -72,7 +72,7 @@
       "payload": {
         "count": 4
       },
-      "elapsed_ms": 320.4
+      "elapsed_ms": 213.5
     },
     {
       "seq": 5,
@@ -83,9 +83,9 @@
       "payload": {
         "metric": "GHGEmissionIntensity",
         "industry": "semiconductors",
-        "trace_id": "e6913d5bfd50"
+        "trace_id": "0f5454b82677"
       },
-      "elapsed_ms": 320.4
+      "elapsed_ms": 213.5
     },
     {
       "seq": 6,
@@ -99,7 +99,7 @@
         "model": "GHGEmissionIntensityModel",
         "competency_questions": 6
       },
-      "elapsed_ms": 934.6
+      "elapsed_ms": 561.8
     },
     {
       "seq": 7,
@@ -113,7 +113,7 @@
         "model": "GHGEmissionIntensityModel",
         "method": "calculation_model"
       },
-      "elapsed_ms": 934.7
+      "elapsed_ms": 561.8
     },
     {
       "seq": 8,
@@ -125,7 +125,7 @@
         "status": "success",
         "value": "0.0710"
       },
-      "elapsed_ms": 1323.2
+      "elapsed_ms": 813.2
     },
     {
       "seq": 9,
@@ -136,7 +136,7 @@
       "payload": {
         "provider": "deterministic-template"
       },
-      "elapsed_ms": 1323.2
+      "elapsed_ms": 813.2
     },
     {
       "seq": 10,
@@ -147,7 +147,7 @@
       "payload": {
         "contract": "success"
       },
-      "elapsed_ms": 1323.2
+      "elapsed_ms": 813.3
     },
     {
       "seq": 11,
@@ -159,7 +159,7 @@
         "value": "0.0710",
         "unit": "tons CO2e per million USD"
       },
-      "elapsed_ms": 1323.2
+      "elapsed_ms": 813.3
     }
   ]
 }

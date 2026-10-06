@@ -65,7 +65,7 @@
       "invariant": "I4",
       "probe": "each responsibility must emit evidence about its own operations, correlatable across the execution",
       "expected": "evidence originates from multiple responsibilities and shares a correlation identifier established at the boundary",
-      "observed": "emitting responsibilities=['L3', 'L4', 'L5', 'L6']; interactions carrying trace_id 4d2892a324e3=2",
+      "observed": "emitting responsibilities=['L3', 'L4', 'L5', 'L6']; interactions carrying trace_id 97939a885d2f=2",
       "preserved": true
     }
   ]

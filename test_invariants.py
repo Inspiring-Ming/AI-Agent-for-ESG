@@ -29,7 +29,8 @@ DEFAULT_ESG_ROOT = os.environ.get(
 sys.path.insert(0, HERE)
 
 from agentic.trace.recorder import Trace                              # noqa: E402
-from agentic.adapters.esg_system import HttpAdapter, LocalAdapter     # noqa: E402
+from agentic.adapters.esg_system import (                          # noqa: E402
+    HttpAdapter, LocalAdapter, EnterpriseSystemUnavailable)     # noqa: E402
 from agentic.responsibilities.l2_protect import AccessControl         # noqa: E402
 from agentic.responsibilities.l3_coordinate import AgentRuntime       # noqa: E402
 from agentic.responsibilities.l4_infer import (                       # noqa: E402
@@ -219,4 +220,8 @@ def main() -> int:
 
 
 if __name__ == "__main__":
-    raise SystemExit(main())
+    try:
+        raise SystemExit(main())
+    except EnterpriseSystemUnavailable as exc:
+        print(f"\nERROR: {exc}")
+        raise SystemExit(2)

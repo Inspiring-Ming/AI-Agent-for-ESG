@@ -21,6 +21,18 @@ import urllib.request
 DEPLOYED_BASE = "https://esgalaxy.com.ngrok.dev"
 
 
+class EnterpriseSystemUnavailable(RuntimeError):
+    """The enterprise system could not be reached through this mechanism."""
+
+    def __init__(self, base: str, detail: str):
+        super().__init__(
+            f"the enterprise system at {base} is unreachable ({detail}).\n"
+            f"  The deployment is tunnelled and may be offline. Either:\n"
+            f"    - run against a local clone:  --mechanism local "
+            f"--esg-root PATH\n"
+            f"    - or inspect the recorded results in output/")
+
+
 class HttpAdapter:
     """Calls the deployed ESG service API over HTTP."""
 
@@ -35,8 +47,11 @@ class HttpAdapter:
         if params:
             url += "?" + urllib.parse.urlencode(params)
         req = urllib.request.Request(url, headers={"Accept": "application/json"})
-        with urllib.request.urlopen(req, timeout=self.timeout) as r:
-            return json.loads(r.read().decode())
+        try:
+            with urllib.request.urlopen(req, timeout=self.timeout) as r:
+                return json.loads(r.read().decode())
+        except Exception as e:
+            raise EnterpriseSystemUnavailable(self.base, f"{type(e).__name__}: {e}")
 
     def _post(self, path: str, body: Dict[str, Any]) -> Dict[str, Any]:
         req = urllib.request.Request(
@@ -44,8 +59,11 @@ class HttpAdapter:
             data=json.dumps(body).encode(),
             headers={"Content-Type": "application/json"},
             method="POST")
-        with urllib.request.urlopen(req, timeout=self.timeout) as r:
-            return json.loads(r.read().decode())
+        try:
+            with urllib.request.urlopen(req, timeout=self.timeout) as r:
+                return json.loads(r.read().decode())
+        except Exception as e:
+            raise EnterpriseSystemUnavailable(self.base, f"{type(e).__name__}: {e}")
 
     # -- L5 knowledge-graph retrieval (CQ1-CQ7) ---------------------------
     def frameworks(self, industry: str) -> Dict[str, Any]:
@@ -119,11 +137,28 @@ class LocalAdapter:
         return {"categories": d.get("categories") or []}
 
     def metrics(self, industry: str, category: str) -> Dict[str, Any]:
+        """CQ3, normalized to the same shape the deployed API returns.
+
+        The in-process service reports whether a calculation model exists via
+        `has_calculation_model`, whereas the deployed API reports the
+        `calculation_method` directly. Both are mapped to `calculation_method`
+        so that the coordinating responsibility is unaffected by the mechanism
+        through which enterprise knowledge is reached.
+        """
         try:
             d = self._kg.cq3_metrics_by_category(industry, category)
         except Exception:
             return {"metrics": []}
-        return {"metrics": d.get("metrics") or []}
+        out = []
+        for m in d.get("metrics") or []:
+            m = dict(m)
+            if not m.get("calculation_method"):
+                m["calculation_method"] = ("calculation_model"
+                                           if m.get("has_calculation_model")
+                                           else "direct_measurement")
+            m.setdefault("name", m.get("metric_name") or m.get("code"))
+            out.append(m)
+        return {"metrics": out}
 
     def models(self, industry: str, metric: str) -> Dict[str, Any]:
         d = self._kg.cq4_metric_calculation_method(industry, metric)
