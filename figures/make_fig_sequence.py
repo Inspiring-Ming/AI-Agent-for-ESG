@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
-"""Figure 3: recorded execution of the instantiated architecture.
+"""Recorded-execution figure (fig:case-runtime) of the instantiated architecture.
 
 A sequence diagram of the representative request, generated from
-output/runtime_trace.json. Fig. 2 of the paper shows the architecture's
+output/runtime_trace.json. The reference-architecture figure shows the architecture's
 structure; this figure shows behaviour: which responsibility exchanged what
 with which, in the order it happened, against the real enterprise system.
 

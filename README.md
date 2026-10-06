@@ -15,14 +15,16 @@ exchange; a request and its return are counted separately).
 ## Quick start
 
 ```bash
+git clone https://github.com/Inspiring-Ming/ESG-Metric-System ../esg-system
+export ESG_REPO=../esg-system   # path to the existing ESG system
 cp .env.example .env            # add your ANTHROPIC_API_KEY
 docker compose up -d --build    # ESG system, two MCP servers, agent service
 open http://localhost:8090      # watch the agent work, step by step
 ./evaluate.sh                   # reproduce the recorded results (REPEATS=3 default)
 ```
 
-`ESG_REPO` (default `../../esg-knowledge-graph-demo`) points at a local clone
-of the ESG Metric System, which Compose builds as the `esg` service.
+Compose builds the existing ESG Metric System from `ESG_REPO` as the `esg`
+service; the agent never imports its code.
 
 ## Architecture as deployed
 
@@ -32,8 +34,8 @@ of the ESG Metric System, which Compose builds as the `esg` service.
 | L2 Access, Identity & Safety Control | signed session token, request validation, rate limit, egress check (`l2_protect.py`) | this package |
 | L3 Agent & Workflow Orchestration | Claude tool-use loop; the model chooses each next tool (`l3_coordinate.py`) | this package |
 | L4 Model Access & Inference | Claude model access, output-contract validation, server-side fallback (`l4_infer.py`) | this package |
-| L5 Enterprise Context & Knowledge | ESG knowledge graph (competency questions CQ1–CQ5) behind an MCP server (`mcp_servers/knowledge_server.py`) | **existing system** |
-| L6 Tool & Action Runtime | resource authorization (`l6_act.py`) + metric computation behind an MCP server (`mcp_servers/compute_server.py`) | **existing system** |
+| L5 Enterprise Context & Knowledge | ESG knowledge graph (competency questions CQ1–CQ5), exposed by an MCP server (`mcp_servers/knowledge_server.py`, `l5_ground.py`) | **existing system**; MCP server in this package |
+| L6 Tool & Action Runtime | entitlement check (`l6_act.py`) + metric-computation service, exposed by an MCP server (`mcp_servers/compute_server.py`) | **existing system** (computation); entitlement check and MCP server in this package |
 | L8 Platform & Delivery Infrastructure | Docker Compose deployment | this package |
 
 L0, L7 and L9 are not instantiated as runtime components.
@@ -79,8 +81,9 @@ Analyst ─T1─▶ FastAPI (L1) ─▶ access gate (L2) ─T2─▶ agent loop 
 | `independent_mapping.py` | mapping of an independently published architecture (`--verify` re-fetches the source) |
 | `figures/make_fig_sequence.py` | the recorded-execution figure, generated from `output/` |
 
-All scripts run through `agentic/system.py`, the same request path the
-service uses, and write their results to `output/`.
+`run_case.py` and `run_goals.py` send requests through `agentic/system.py`,
+the same request path the service uses; `test_invariants.py` assembles the
+same components with call counters around L5 and L6. All write to `output/`.
 
 ## Recorded results
 
@@ -126,8 +129,8 @@ agentic/
   adapters/           MCP clients; HTTP adapter used by the MCP servers
   trace/              interaction recorder and the T1–T8 interaction types
 mcp_servers/          MCP servers exposing L5 and L6 of the existing system
-service/              FastAPI service (L1, L2)
+service/              FastAPI service (L1)
 ui/                   analyst page
 output/               recorded results (JSON)
-figures/              figure generators
+figures/              recorded-execution figure and its generator
 ```

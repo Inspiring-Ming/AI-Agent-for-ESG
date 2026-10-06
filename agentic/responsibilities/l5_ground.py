@@ -14,7 +14,7 @@ The traversal realises the ontology relationship chain
 so the grounded context returned to L3 carries not only the metric definition
 but the provenance chain that makes a later computed value interpretable.
 
-Boundary (Section IV-C): L5 manages information that persists independently of
+Boundary (invariant I2): L5 manages information that persists independently of
 any single execution and can be retrieved across executions. It does not decide
 what to retrieve (L3) and it does not execute calculations (L6).
 """

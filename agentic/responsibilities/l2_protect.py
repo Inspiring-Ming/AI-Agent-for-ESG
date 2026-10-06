@@ -4,7 +4,7 @@ Protects the controlled boundary through which requests and responses enter or
 leave the agentic system: a signed-token session, request validation, a
 per-principal sliding-window rate limit, and an egress check.
 
-Boundary (Section IV-B / IV-E): L2 decides whether an identity may access the
+Boundary (invariant I3): L2 decides whether an identity may access the
 agentic service, and propagates identity, entitlement and trace context to
 downstream responsibilities. It does NOT decide whether the agent may perform
 a particular enterprise action -- that authorization stays with L6, which

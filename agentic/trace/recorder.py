@@ -1,7 +1,7 @@
 """Interaction trace recorder.
 
 Records every cross-responsibility interaction as it happens, so the runtime
-trace reported in Section V-B is produced by the running system rather than
+trace reported in the paper is produced by the running system rather than
 asserted in prose. Each record names the source and target responsibility, the
 interaction purpose, and the information exchanged.
 """
@@ -12,7 +12,7 @@ import json
 import time
 
 
-# Interaction types defined by the architecture (Section IV-E). A runtime
+# Interaction types defined by the architecture (Table I of the paper). A runtime
 # execution produces OCCURRENCES of these types; several occurrences may share
 # a type, and a type may not occur at all in a given execution.
 T_TYPES = {

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Independent architecture mapping (Table IV).
+"""Independent architecture mapping (Section VI).
 
 Maps the architectural elements of Microsoft's Multi-Agent Reference
 Architecture to the proposed responsibilities. Each element records the purpose
@@ -147,7 +147,7 @@ def main() -> int:
         return verify()
 
     print("=" * 72)
-    print("INDEPENDENT ARCHITECTURE MAPPING (Table IV)")
+    print("INDEPENDENT ARCHITECTURE MAPPING")
     print("=" * 72)
 
     direct = [m for m in MAPPING if m[3] == "direct"]

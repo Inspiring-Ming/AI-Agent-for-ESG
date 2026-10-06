@@ -1,14 +1,15 @@
 # One command brings up the whole instantiation:
 #   docker compose up --build        then open http://localhost:8090
 #
-# esg            existing ESG Metric System (L5/L6 enterprise services, L8 host)
+# esg            existing ESG Metric System (knowledge graph and computation)
 # mcp-knowledge  MCP server exposing the knowledge graph            (L5)
 # mcp-compute    MCP server exposing metric computation             (L6)
 # agent          FastAPI service: analyst API + page (L1), access gate (L2),
 #                agent runtime (L3), Claude model access (L4)
 #
 # ESG_REPO points at a clone of https://github.com/Inspiring-Ming/ESG-Metric-System
-# (default: a sibling checkout). ANTHROPIC_API_KEY is read from .env.
+# (set ESG_REPO; default ../../esg-knowledge-graph-demo). ANTHROPIC_API_KEY is
+# read from .env.
 
 services:
   esg:

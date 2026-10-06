@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
-"""Boundary-invariant experiments (Table III).
+"""Boundary-invariant probes (Section VI).
 
-Each invariant defined in Section IV-A is tested against the running
+Each boundary invariant of the reference architecture is tested against the running
 instantiation. An invariant is reported Preserved only when a probe that would
-violate it is observably refused or prevented, so Table III reports measured
+violate it is observably refused or prevented, so the paper reports measured
 outcomes rather than assertions.
 
   I1 Coordination--Execution        L3 decides; L6 validates and executes

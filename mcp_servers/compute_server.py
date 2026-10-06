@@ -5,7 +5,7 @@ computation itself remains a deterministic service operation of the existing
 system; this server only makes it reachable through MCP.
 
 Resource-specific authorization is enforced by the L6 action runtime in the
-agent host before this tool is invoked (Section IV, invariant I3), so the
+agent host before this tool is invoked (invariant I3), so the
 model never supplies or sees credentials.
 
 Tools

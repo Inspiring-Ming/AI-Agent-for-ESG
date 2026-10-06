@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Goal-variation experiment (Section V-C).
+"""Goal-variation experiment (Section V).
 
 Runs the same deployed request path against goals that differ in what they
 require, each several times, and records for every execution the action
