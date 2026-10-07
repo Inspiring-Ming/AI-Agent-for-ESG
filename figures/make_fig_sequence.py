@@ -60,16 +60,16 @@ def describe(it):
     if purpose == "request admission":
         return f"portfolio question: {p.get('holdings')} holdings, {p.get('year')}"
     if purpose.startswith("authorized request"):
-        return f"authorized request + identity ({p.get('role')}) and trace context"
+        role = (p.get("role") or "").replace("_", " ")
+        return f"authorized request + identity ({role}) and trace context"
     if purpose == "capability discovery":
-        return f"which metrics in “{p.get('category')}”? (CQ3)"
+        return f"which metrics does “{p.get('category')}” contain?"
     if purpose == "discovered metrics":
         return f"{p.get('count')} candidate metrics"
     if purpose == "context retrieval":
         return f"how is {p.get('metric')} calculated?"
     if purpose == "grounded context":
-        return (f"model {p.get('model')}, inputs, provenance "
-                f"(CQ1–CQ{p.get('competency_questions')})")
+        return f"calculation model {p.get('model')} and its inputs"
     if purpose == "action intent" and tool == "portfolio_intensity":
         return f"portfolio carbon intensity (WACI), {p.get('year')}"
     if purpose == "action intent" and tool in ("check_trade", "submit_trade"):
@@ -111,7 +111,7 @@ def rows(msgs):
             intents = [m for m in grp if m["purpose"] == "action intent"]
             obs = [m for m in grp if m["purpose"] == "observation"]
             seqs = f"{grp[0]['seq']}–{grp[-1]['seq']}"
-            out.append({**intents[0], "label": f"{seqs}  T5   compute "
+            out.append({**intents[0], "num": seqs, "text": "compute "
                         f"{intents[0]['payload'].get('metric')} for "
                         f"{len(intents)} holdings, {intents[0]['payload'].get('year')}",
                         "ret": False})
@@ -120,15 +120,25 @@ def rows(msgs):
                 if m["payload"].get("value") else
                 f"{_short(m['payload']['company'])}: no revenue data"
                 for m in obs)
-            out.append({**obs[0], "label": f"{seqs}  T5   {vals}", "ret": True})
+            out.append({**obs[0], "num": seqs, "text": vals, "ret": True})
             i = j
             continue
         ret = it["purpose"] in ("discovered metrics", "grounded context",
                                 "observation", "inference result", "answer")
-        out.append({**it, "label": f"{it['seq']}  {it['ttype']}   "
-                    f"{describe(it)}", "ret": ret})
+        out.append({**it, "num": str(it["seq"]), "text": describe(it),
+                    "ret": ret})
         i += 1
     return out
+
+
+TCOL = {"T1": "#3C9A4A", "T2": "#B07F12", "T3": "#8A55B5",
+        "T4": "#2F6DB5", "T5": "#2B8A6E"}
+
+
+def _right(fig, ax, artist):
+    """Right edge of a drawn text artist, in data coordinates."""
+    bb = artist.get_window_extent(renderer=fig.canvas.get_renderer())
+    return ax.transData.inverted().transform((bb.x1, bb.y0))[0]
 
 
 def draw(out_dir):
@@ -186,7 +196,19 @@ def draw(out_dir):
             linestyle=(0, (4, 2)) if it["ret"] else "-", shrinkA=0, shrinkB=0,
             zorder=5))
         left = min(xs, xt)
-        ax.text(left + 0.08, y + 0.075, it["label"],
+        # label: occurrence number, interaction-type tag, content
+        x = left + 0.08
+        t = ax.text(x, y + 0.075, it["num"], ha="left", va="bottom",
+                    fontsize=F_MSG - 0.6, color=MUTED, zorder=6)
+        x = _right(fig, ax, t) + 0.10
+        t = ax.text(x, y + 0.075, it["ttype"], ha="left", va="bottom",
+                    fontsize=F_MSG - 0.8, fontweight="bold",
+                    color=TCOL.get(it["ttype"], INK), zorder=6,
+                    bbox=dict(boxstyle="round,pad=0.18", facecolor="white",
+                              edgecolor=TCOL.get(it["ttype"], INK),
+                              linewidth=0.8))
+        x = _right(fig, ax, t) + 0.12
+        ax.text(x, y + 0.075, it["text"],
                 ha="left", va="bottom", fontsize=F_MSG, color=INK, zorder=6,
                 bbox=dict(boxstyle="square,pad=0.05", facecolor="white",
                           edgecolor="none", alpha=0.85))
@@ -215,12 +237,26 @@ def draw(out_dir):
                                 linewidth=1.1))
     ax.text(7.08, ly, "provided by the existing ESG system", ha="left",
             va="center", fontsize=F_NOTE, color=INK)
-    ax.text(0.20, 0.12,
-            f"{tr['interaction_occurrences']} recorded interaction "
-            f"occurrences realizing {len(tr['interaction_types_observed'])} "
-            f"of {tr['interaction_types_defined']} interaction types; L5 and L6 "
-            "are reached through MCP. L6 lifeline: computation (existing) and "
-            "portfolio service (introduced).",
+    # key to the message labels
+    kx, ky = 0.20, 0.10
+    t = ax.text(kx, ky, "Message label:", ha="left", va="center",
+                fontsize=F_NOTE, color=INK, fontweight="bold")
+    t = ax.text(_right(fig, ax, t) + 0.10, ky, "13–20", ha="left",
+                va="center", fontsize=F_NOTE - 0.6, color=MUTED)
+    t = ax.text(_right(fig, ax, t) + 0.10, ky, "T5", ha="left", va="center",
+                fontsize=F_NOTE - 0.8, fontweight="bold", color=TCOL["T5"],
+                bbox=dict(boxstyle="round,pad=0.18", facecolor="white",
+                          edgecolor=TCOL["T5"], linewidth=0.8))
+    ax.text(_right(fig, ax, t) + 0.12, ky,
+            "= order of the exchange (interaction occurrence)  ·  interaction "
+            "type of Table I  ·  content exchanged",
+            ha="left", va="center", fontsize=F_NOTE, color=INK)
+    ax.text(0.20, -0.14,
+            f"{tr['interaction_occurrences']} occurrences realizing "
+            f"{len(tr['interaction_types_observed'])} of "
+            f"{tr['interaction_types_defined']} interaction types. L5 and L6 "
+            "are reached through MCP; the L6 lifeline combines the existing "
+            "computation service and the added portfolio service.",
             ha="left", va="center", fontsize=F_NOTE, color=MUTED)
 
     os.makedirs(out_dir, exist_ok=True)
