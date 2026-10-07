@@ -103,8 +103,9 @@ MAPPING = [
      "Responsible-AI policies and accountability structures, guardrails across "
      "the AI lifecycle, governed data access and use, evaluation and "
      "red-teaming processes.",
-     "L0", "direct",
-     "Design-time and governance requirements rather than a runtime path."),
+     "L0/L2", "spanning",
+     "Policies and accountability are design-time L0 decisions, while runtime "
+     "guardrails (content safety, prompt shields) are L2 boundary controls."),
 ]
 
 # element name -> document that should still contain it

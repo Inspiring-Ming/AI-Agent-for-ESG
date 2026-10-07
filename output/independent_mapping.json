@@ -6,9 +6,9 @@
   },
   "summary": {
     "elements": 10,
-    "direct": 5,
+    "direct": 4,
     "conditional": 2,
-    "spanning": 3,
+    "spanning": 4,
     "responsibilities_touched": [
       "L0",
       "L2",
@@ -87,9 +87,9 @@
     {
       "element": "Governance",
       "source_purpose": "Responsible-AI policies and accountability structures, guardrails across the AI lifecycle, governed data access and use, evaluation and red-teaming processes.",
-      "responsibility": "L0",
-      "relation": "direct",
-      "note": "Design-time and governance requirements rather than a runtime path."
+      "responsibility": "L0/L2",
+      "relation": "spanning",
+      "note": "Policies and accountability are design-time L0 decisions, while runtime guardrails (content safety, prompt shields) are L2 boundary controls."
     }
   ]
 }

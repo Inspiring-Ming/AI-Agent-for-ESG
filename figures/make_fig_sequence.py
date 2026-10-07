@@ -28,17 +28,20 @@ HERE = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 TRACE = os.path.join(HERE, "output", "runtime_trace.json")
 
 INK, MUTED = "#141414", "#4A4A4A"
-NEW_FILL, NEW_EDGE = "#FFFFFF", "#3B3B3B"      # introduced by instantiation
-OLD_FILL, OLD_EDGE = "#E4EEF8", "#2F6DB5"      # existing ESG system
-REQ, RET = "#1F4E9A", "#1E7A46"
+REQ, RET = "#213A8F", "#1E7A46"
+TAG = "#213A8F"
+# (edge, fill) per responsibility, matching the reference-architecture figure
+RCOL = {"L1": ("#2E9B57", "#ECF8F0"), "L2": ("#E0A12A", "#FFF6E3"),
+        "L3": ("#D64545", "#FDECEC"), "L4": ("#9A4FC4", "#F6EDFB"),
+        "L5": ("#2F7FD6", "#EAF3FD"), "L6": ("#2E9B57", "#ECF8F0")}
 
 # lifeline order chosen to keep the common exchanges short
 LANES = [
     ("L1", "Client & Experience", "portfolio analyst page", False),
     ("L2", "Access, Identity &\nSafety Control", "access gate", False),
-    ("L3", "Agent & Workflow\nOrchestration", "goal-directed agent", False),
-    ("L5", "Enterprise Context\n& Knowledge", "ESG knowledge graph", True),
-    ("L6", "Tool & Action\nRuntime", "computation · portfolio", "mixed"),
+    ("L3", "Agent & Workflow\nOrchestration", "agent runtime", False),
+    ("L5", "Enterprise Context\n& Knowledge", "ESG knowledge graph*", True),
+    ("L6", "Tool & Action\nRuntime", "computation* · portfolio", "mixed"),
     ("L4", "Model Access\n& Inference", "Claude model access", False),
 ]
 
@@ -58,36 +61,36 @@ def describe(it):
     p, purpose = it["payload"], it["purpose"]
     tool = p.get("tool")
     if purpose == "request admission":
-        return f"portfolio question: {p.get('holdings')} holdings, {p.get('year')}"
+        return f"portfolio question ({p.get('holdings')} holdings, {p.get('year')})"
     if purpose.startswith("authorized request"):
         role = (p.get("role") or "").replace("_", " ")
-        return f"authorized request + identity ({role}) and trace context"
+        return f"admitted request with identity ({role}) and trace context"
     if purpose == "capability discovery":
-        return f"which metrics does “{p.get('category')}” contain?"
+        return f"metrics of category “{p.get('category')}”"
     if purpose == "discovered metrics":
-        return f"{p.get('count')} candidate metrics"
+        return f"{p.get('count')} metrics"
     if purpose == "context retrieval":
-        return f"how is {p.get('metric')} calculated?"
+        return f"calculation model of {p.get('metric')}"
     if purpose == "grounded context":
-        return f"calculation model {p.get('model')} and its inputs"
+        return f"{p.get('model')} and its required inputs"
     if purpose == "action intent" and tool == "portfolio_intensity":
         return f"portfolio carbon intensity (WACI), {p.get('year')}"
     if purpose == "action intent" and tool in ("check_trade", "submit_trade"):
         return ("pre-trade compliance check" if tool == "check_trade"
                 else "submit trade instruction")
     if purpose == "observation" and tool == "portfolio_intensity":
-        return f"WACI {_num(p.get('waci'))}, contributions, coverage"
+        return f"WACI {_num(p.get('waci'))}, holding contributions, data coverage"
     if purpose == "observation" and tool == "check_trade":
         return "within mandate" if p.get("compliant") else "breaches mandate"
     if purpose == "observation" and tool == "submit_trade":
         return f"{p.get('status')}"
     if purpose == "inference request":
-        return "what next? (question + observations so far)"
+        return "next-step request (question and observations)"
     if purpose == "inference result":
-        return f"model decision (output contract: {p.get('contract')})"
+        return f"model decision; output contract {'satisfied' if p.get('contract') == 'success' else p.get('contract')}"
     if purpose == "answer":
-        return (f"answer: WACI {_num(p.get('waci'))} t CO\u2082e per USD million"
-                " + drivers + missing data")
+        return (f"answer after L2 egress check: WACI {_num(p.get('waci'))},"
+                " drivers, excluded holding")
     return purpose
 
 
@@ -131,8 +134,7 @@ def rows(msgs):
     return out
 
 
-TCOL = {"T1": "#3C9A4A", "T2": "#B07F12", "T3": "#8A55B5",
-        "T4": "#2F6DB5", "T5": "#2B8A6E"}
+TCOL = {t: TAG for t in ("T1", "T2", "T3", "T4", "T5")}
 
 
 def _right(fig, ax, artist):
@@ -164,17 +166,12 @@ def draw(out_dir):
         w = 1.64
         ax.add_patch(FancyBboxPatch(
             (x - w / 2, top), w, head_h,
-            boxstyle="round,pad=0,rounding_size=0.06",
-            facecolor=OLD_FILL if existing is True else NEW_FILL,
-            edgecolor=OLD_EDGE if existing else NEW_EDGE, linewidth=1.3,
+            boxstyle="round,pad=0,rounding_size=0.04",
+            facecolor=RCOL[rid][1], edgecolor=RCOL[rid][0], linewidth=1.4,
             zorder=3))
-        if existing == "mixed":      # part existing system, part instantiation
-            ax.add_patch(plt.Rectangle((x - w / 2 + 0.02, top + 0.02),
-                                       w / 2 - 0.02, head_h - 0.04,
-                                       facecolor=OLD_FILL, edgecolor="none",
-                                       zorder=3.5))
         ax.text(x, head_top - 0.14, rid, ha="center", va="center",
-                fontsize=F_HEAD + 0.6, fontweight="bold", color=INK, zorder=4)
+                fontsize=F_HEAD + 0.6, fontweight="bold", color=RCOL[rid][0],
+                zorder=4)
         ax.text(x, head_top - 0.29, name, ha="center", va="top",
                 fontsize=F_SUB, fontweight="bold", color=INK, zorder=4,
                 linespacing=1.15)
@@ -203,10 +200,10 @@ def draw(out_dir):
         x = _right(fig, ax, t) + 0.10
         t = ax.text(x, y + 0.075, it["ttype"], ha="left", va="bottom",
                     fontsize=F_MSG - 0.8, fontweight="bold",
-                    color=TCOL.get(it["ttype"], INK), zorder=6,
-                    bbox=dict(boxstyle="round,pad=0.18", facecolor="white",
-                              edgecolor=TCOL.get(it["ttype"], INK),
-                              linewidth=0.8))
+                    color="white", zorder=6,
+                    bbox=dict(boxstyle="round,pad=0.18,rounding_size=0.08",
+                              facecolor=TCOL.get(it["ttype"], INK),
+                              edgecolor="none"))
         x = _right(fig, ax, t) + 0.12
         ax.text(x, y + 0.075, it["text"],
                 ha="left", va="bottom", fontsize=F_MSG, color=INK, zorder=6,
@@ -230,35 +227,26 @@ def draw(out_dir):
         (x, ly), (x + 0.42, ly), arrowstyle="-|>", mutation_scale=9,
         color=RET, linewidth=1.25, linestyle=(0, (4, 2)))),
         "result / observation")
-    x = item(x, lambda x: ax.add_patch(FancyBboxPatch(
-        (x + 0.06, ly - 0.09), 0.34, 0.18,
-        boxstyle="round,pad=0,rounding_size=0.03", facecolor=NEW_FILL,
-        edgecolor=NEW_EDGE, linewidth=1.1)), "introduced by the instantiation")
-    item(x, lambda x: ax.add_patch(FancyBboxPatch(
-        (x + 0.06, ly - 0.09), 0.34, 0.18,
-        boxstyle="round,pad=0,rounding_size=0.03", facecolor=OLD_FILL,
-        edgecolor=OLD_EDGE, linewidth=1.1)), "existing ESG system")
+    ax.text(x, ly, "* existing ESG system; all other components were "
+            "introduced by the instantiation", ha="left", va="center",
+            fontsize=F_NOTE, color=INK)
 
     # key to the message labels
     kx, ky = 0.20, 0.10
-    t = ax.text(kx, ky, "Message label:", ha="left", va="center",
+    t = ax.text(kx, ky, "Label:", ha="left", va="center",
                 fontsize=F_NOTE, color=INK, fontweight="bold")
     t = ax.text(_right(fig, ax, t) + 0.10, ky, "13–20", ha="left",
                 va="center", fontsize=F_NOTE - 0.6, color=MUTED)
     t = ax.text(_right(fig, ax, t) + 0.10, ky, "T5", ha="left", va="center",
-                fontsize=F_NOTE - 0.8, fontweight="bold", color=TCOL["T5"],
-                bbox=dict(boxstyle="round,pad=0.18", facecolor="white",
-                          edgecolor=TCOL["T5"], linewidth=0.8))
+                fontsize=F_NOTE - 0.8, fontweight="bold", color="white",
+                bbox=dict(boxstyle="round,pad=0.18,rounding_size=0.08",
+                          facecolor=TAG, edgecolor="none"))
     ax.text(_right(fig, ax, t) + 0.12, ky,
-            "= order of the exchange (interaction occurrence)  ·  interaction "
-            "type of Table I  ·  content exchanged",
+            "occurrence number, interaction type (Table I), content",
             ha="left", va="center", fontsize=F_NOTE, color=INK)
     ax.text(0.20, -0.14,
-            f"{tr['interaction_occurrences']} occurrences realizing "
-            f"{len(tr['interaction_types_observed'])} of "
-            f"{tr['interaction_types_defined']} interaction types. L5 and L6 "
-            "are reached through MCP; L6 = existing computation + added "
-            "portfolio service.",
+            "L5 and L6 are reached through MCP; L6 comprises the existing "
+            "computation service and the added portfolio service.",
             ha="left", va="center", fontsize=F_NOTE, color=MUTED)
 
     os.makedirs(out_dir, exist_ok=True)
