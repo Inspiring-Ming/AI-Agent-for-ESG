@@ -301,7 +301,9 @@ function exchange(x) {
 
 function traceSection(d) {
   const s = d.summary;
-  let h = `<details><summary>How the agent got there — ${d.steps.length} steps, ${s.occurrences} interactions between architecture parts</summary>
+  const u = s.usage || {};
+  const tok = u.input_tokens != null ? ` · ${fmt((u.input_tokens||0) + (u.cache_write_tokens||0) + (u.cache_read_tokens||0))} input tokens (${fmt(u.cache_read_tokens||0)} from cache), ${fmt(u.output_tokens||0)} output` : "";
+  let h = `<details><summary>How the agent got there — ${d.steps.length} steps, ${s.occurrences} interactions between architecture parts${tok}</summary>
     <div class="legend">Parts: ${LCHIP("L1")} this page · ${LCHIP("L2")} access control · ${LCHIP("L3")} the agent ·
       ${LCHIP("L4")} AI model (${esc(s.model)}) · ${LCHIP("L5")} ESG knowledge graph · ${LCHIP("L6")} ESG computation, portfolio &amp; compliance services.
       T1–T5 are the interaction types of the reference architecture. L5 and L6 are reached through ${esc(s.mechanism)}.</div>`;

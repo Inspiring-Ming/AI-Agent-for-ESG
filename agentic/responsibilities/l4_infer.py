@@ -8,6 +8,12 @@ Output contract: the response must either request one or more *registered*
 tools or end its turn with text. Refusals, truncation, and calls to
 unregistered tools are contract violations, which L3 treats as failures.
 
+L4 also controls inference cost. The system prompt and tool definitions are
+identical on every call, so they are cached with an explicit breakpoint, and
+the growing conversation of an execution is cached automatically, so each
+step re-reads earlier steps from the cache. Every call reports its token
+usage, which L3 records with the inference result (T3).
+
 Boundary: validation here concerns whether an inference result can be consumed
 by the application. Whether information may leave the controlled system
 boundary remains with L2.
@@ -36,9 +42,13 @@ class ModelAccess:
         response = self._client.beta.messages.create(
             model=self.model,
             max_tokens=16000,
-            system=system,
+            # Fixed prefix (tools + system): explicit cache breakpoint.
+            system=[{"type": "text", "text": system,
+                     "cache_control": {"type": "ephemeral"}}],
             messages=messages,
             tools=tools,
+            # Growing conversation tail: automatic cache breakpoint.
+            cache_control={"type": "ephemeral"},
             output_config={"effort": self.effort},
             # On a policy decline, the API re-runs the request on a fallback
             # model chosen by refusal category, inside the same call.
@@ -47,7 +57,16 @@ class ModelAccess:
         )
         allowed = {t["name"] for t in tools}
         return {"response": response,
-                "contract": self._validate(response, allowed)}
+                "contract": self._validate(response, allowed),
+                "usage": self._usage(response)}
+
+    @staticmethod
+    def _usage(response) -> Dict[str, int]:
+        u = response.usage
+        return {"input_tokens": u.input_tokens or 0,
+                "output_tokens": u.output_tokens or 0,
+                "cache_write_tokens": getattr(u, "cache_creation_input_tokens", 0) or 0,
+                "cache_read_tokens": getattr(u, "cache_read_input_tokens", 0) or 0}
 
     @staticmethod
     def _validate(response, allowed) -> str:

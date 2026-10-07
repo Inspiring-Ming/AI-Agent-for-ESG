@@ -306,7 +306,7 @@ class AgentRuntime:
                                 "computations": {}, "portfolio": {},
                                 "trade_checks": [],
                                 "l6_invocations": 0, "evidence": set(),
-                                "revisions": 0, "flagged": [],
+                                "revisions": 0, "flagged": [], "usage": {},
                                 "status": "running"}
         wc = self.working_context
         _collect({k: v for k, v in goal.items() if k != "industry"},
@@ -327,7 +327,9 @@ class AgentRuntime:
             out = self._infer.step(SYSTEM, messages, TOOLS)
             resp = out["response"]
             s2 = self._rec("L4", "L3", "inference result", ttype="T3",
-                           contract=out["contract"])
+                           contract=out["contract"], **out["usage"])
+            for k, v in out["usage"].items():
+                wc["usage"][k] = wc["usage"].get(k, 0) + v
             # keep the assistant turn verbatim (thinking blocks included)
             messages.append({"role": "assistant", "content": resp.content})
 
@@ -431,6 +433,7 @@ class AgentRuntime:
         out = {"status": wc["status"],
                "plan": [dict(p) for p in wc["plan"]],
                "model_calls": wc["model_calls"],
+               "usage": wc["usage"],
                "l6_invocations": wc["l6_invocations"],
                "answer": final_text,
                "grounding": {**self._grounding(final_text),

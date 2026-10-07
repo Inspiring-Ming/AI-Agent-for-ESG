@@ -171,6 +171,7 @@ def run(req: RunRequest, authorization: str = Header(default="")):
                     "types": sorted({o["type"] for o in occ.values()}),
                     "responsibilities": trace.responsibilities_touched(),
                     "model_calls": result.get("model_calls"),
+                    "usage": result.get("usage"),
                     "model": result["provenance"]["inference_provider"],
                     "mechanism": system.MECHANISM},
         "responsibilities": RESP,

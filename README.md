@@ -61,7 +61,7 @@ open http://localhost:8090      # ask the agent, watch each step, approve overri
 | L1 Client & Experience | FastAPI service + portfolio analyst page (`service/api.py`, `ui/`) | this package |
 | L2 Access, Identity & Safety Control | signed session token, role-based entitlements (portfolio manager, compliance officer), request validation, rate limit, egress check (`l2_protect.py`) | this package |
 | L3 Agent & Workflow Orchestration | Claude tool-use loop with execution constraints (`l3_coordinate.py`) | this package |
-| L4 Model Access & Inference | Claude model access, output-contract validation, server-side fallback (`l4_infer.py`) | this package |
+| L4 Model Access & Inference | Claude model access, output-contract validation, server-side fallback, prompt caching, token-usage reporting (`l4_infer.py`) | this package |
 | L5 Enterprise Context & Knowledge | ESG knowledge graph (competency questions CQ1–CQ5), exposed by an MCP server (`mcp_servers/knowledge_server.py`) | **existing system**; MCP server in this package |
 | L6 Tool & Action Runtime | metric computation, exposed by an MCP server (`mcp_servers/compute_server.py`) | **existing system**; MCP server in this package |
 | L6 Tool & Action Runtime | portfolio and compliance service (WACI, pre-trade mandate check) as an MCP server (`mcp_servers/portfolio_server.py`); entitlement checks, trade submission and override gate (`l6_act.py`) | this package |
@@ -112,6 +112,16 @@ North American-listed ones. Carbon intensity can be computed for seven
 companies (STMicroelectronics, Infineon, NXP, Microchip, ON Semiconductor, UMC,
 Micron) for 2021–2023; for others, such as TSMC, the system reports missing
 revenue, which the agent passes on.
+
+### Inference cost
+
+L4 caches the fixed prefix of every request (tool definitions and system
+prompt) and, automatically, the growing conversation of an execution, so each
+step re-reads earlier steps from the cache. Every model call reports its token
+usage (uncached input, cache writes, cache reads, output); L3 records it on the
+T3 inference result, so it appears in `output/runtime_trace.json` and in the
+page's trace. On a warm cache, a four-holding question uses about 17k input
+tokens, of which about 14k are read from the cache.
 
 ## Configuration
 
