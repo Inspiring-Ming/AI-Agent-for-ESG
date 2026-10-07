@@ -1,22 +1,25 @@
 #!/usr/bin/env python3
 """Independent architecture mapping (Section VI).
 
-Maps the architectural elements of Microsoft's Multi-Agent Reference
-Architecture to the proposed responsibilities. Each element records the purpose
-as stated by the source, so the mapping is auditable against the published
+Maps the components of a published reference architecture that is not among
+the 11 synthesis sources -- Lu et al., "Towards Responsible Generative AI: A
+Reference Architecture for Designing Foundation Model Based Agents" (ICSA-C
+2024) -- to the proposed responsibilities. Each element records the purpose as
+stated by the source, so the mapping is auditable against the published
 description rather than resting on terminology alone.
 
-Elements whose stated purpose crosses a proposed responsibility boundary are
-recorded as "spanning" rather than forced into a one-to-one correspondence;
-those cases are the informative ones, because they test whether the boundary is
-an artifact of the ESG case.
+The elements are the component groups of the source's reference-architecture
+figure (Fig. 2); its responsible-AI plugins are grouped by concern. Elements
+whose stated purpose crosses a proposed responsibility boundary are recorded as
+"spanning" rather than forced into a one-to-one correspondence; those cases are
+the informative ones.
 
-Source: https://microsoft.github.io/multi-agent-reference-architecture/
-Repo:   https://github.com/microsoft/multi-agent-reference-architecture
+Source: https://doi.org/10.1109/ICSA-C63560.2024.00028
+Text:   https://arxiv.org/html/2311.13148v3
 
 Run:  python experiments/independent_mapping.py [--verify]
-  --verify re-fetches the source documents and checks that each quoted
-  element name still appears, reporting any that have changed.
+  --verify re-fetches the source text and checks that each element name
+  still appears.
 """
 
 import argparse
@@ -26,115 +29,117 @@ import sys
 import urllib.request
 
 HERE = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))  # repo root
-RAW = ("https://raw.githubusercontent.com/microsoft/"
-       "multi-agent-reference-architecture/main/docs")
+SOURCE_URL = "https://arxiv.org/html/2311.13148v3"
 
 # element, source-stated purpose (paraphrased from the source text),
 # responsibility, relation, note
 MAPPING = [
-    ("Orchestrator agent",
-     "Acts as central coordinator: receives incoming requests, formulates a "
-     "high-level plan of tasks, delegates them to specialized agents, and "
-     "aggregates their outputs into a final response.",
+    ("Context engineering",
+     "Dialogue interface, multimodal context injection, and passive or "
+     "proactive goal creators that collect and structure the context needed "
+     "to understand the user's goals.",
+     "L1/L3", "spanning",
+     "Interaction surfaces belong to L1; interpreting goals belongs to L3."),
+
+    ("Prompt/response engineering",
+     "Prompt/response generator using templates and personas to produce "
+     "prompts and responses aligned with the goal.",
      "L3", "direct",
-     "Coordination of goal-directed execution without owning execution "
-     "mechanisms."),
-
-    ("Specialized agents",
-     "Domain-focused experts, each responsible for a distinct area of "
-     "expertise; may themselves coordinate sub-agents.",
-     "L3", "conditional",
-     "Instantiated only in multi-agent configurations; the ESG case uses a "
-     "single coordinating agent."),
-
-    ("Agents registry",
-     "Centralized data service cataloguing each agent's identity, "
-     "capabilities, operational status, version and metadata tags, enabling "
-     "discovery and auditability.",
-     "L3", "conditional",
-     "Agent discovery; distinct from the L6 tool registry, which catalogues "
-     "executable capabilities rather than agents."),
-
-    ("Agents communication",
-     "Request-based communication for tightly coupled or latency-sensitive "
-     "interaction; message-driven communication via a broker or event bus for "
-     "loose coupling and resilience.",
-     "L3/L7", "spanning",
-     "Coordination ownership remains in L3 while the message-driven variant is "
-     "mediated by L7; the architecture separates these, the source groups "
-     "them under one element."),
+     "Prompt and runtime configuration within coordination."),
 
     ("Memory",
-     "Holds what is true of this user, session and collaboration -- "
-     "preferences, decisions, open issues, interaction history. The source "
-     "states explicitly that memory is not a knowledge base: enterprise "
-     "content is authoritative, shared, permission-controlled and changes "
-     "independently of any conversation.",
+     "Short-term memory (configuration, recent events, working context) "
+     "within the model's context window; long-term memory (event history, "
+     "knowledge and past experiences) outside it, moved in through memory "
+     "retrieval.",
      "L3/L5", "spanning",
-     "The source independently draws invariant I2: session-scoped state is "
-     "distinguished from enterprise knowledge retrieved on demand through a "
-     "permission-trimmed index."),
+     "In-context working state is execution-bound (L3); long-term knowledge "
+     "and experience is reusable context (L5), consistent with I2."),
 
-    ("Context engineering",
-     "Designing, preparing and managing the information supplied to models to "
-     "shape behaviour and results.",
-     "L5", "direct",
-     "Context assembly preceding inference."),
+    ("Planning",
+     "Single- or multi-path plan generation with one-shot or incremental model "
+     "querying, refined through self-, cross-, or human reflection.",
+     "L3", "direct",
+     "Coordination; human reflection corresponds to conditional human "
+     "interaction."),
 
-    ("Security",
-     "Identity enforcement with agents and orchestrators authenticating via an "
-     "identity provider and RBAC governing execution permissions; "
-     "policy-controlled tool invocation at the point of action.",
-     "L2/L6", "spanning",
-     "The source independently draws invariant I3: boundary identity "
-     "enforcement is separated from authorization at the point of action."),
+    ("Cooperation with other agents",
+     "Voting-, role-, and debate-based cooperation among agents.",
+     "L3", "conditional",
+     "Multi-agent collaboration; the case uses one agent."),
 
-    ("Observability",
-     "Evaluation-driven observability over agent execution.",
+    ("Execution engine",
+     "Task executor performing the planned tasks, using tools or other agents, "
+     "and a task monitor managing queued tasks.",
+     "L3/L6", "spanning",
+     "The source places deciding and performing a task in one component; the "
+     "proposed structure separates coordination (L3) from capability "
+     "execution (L6), consistent with I1."),
+
+    ("Tool/agent selector and registry",
+     "Search, rank, or generate tools and agents, drawing on a tool/agent "
+     "registry or marketplace.",
+     "L3/L6", "spanning",
+     "Agent discovery is an L3 collaboration capability; the tool catalogue "
+     "belongs to L6."),
+
+    ("Guardrails",
+     "Input, output, RAG, execution, and intermediate guardrails controlling "
+     "the inputs and outputs of models, retrieval, and tools.",
+     "L2/L5/L6", "spanning",
+     "Boundary input/output controls (L2), retrieval constraints (L5), and "
+     "permitted actions (L6): resource-specific enforcement, consistent "
+     "with I3."),
+
+    ("Recording and risk assessment",
+     "Black box recorder of runtime data across components, continuous risk "
+     "assessor of AI risk metrics, and explainer of outputs and rationale.",
      "L9", "direct",
-     "Operational evidence collection and correlation."),
+     "Accountability and operational evidence."),
 
-    ("Evaluation",
-     "Assessment of system behaviour and quality.",
-     "L9", "direct",
-     "Evaluation evidence feeding improvement."),
+    ("AIBOM and co-versioning registries",
+     "Supply-chain records of tools, agents, and models, used to refuse "
+     "components of questionable provenance; co-versioning of model "
+     "variants.",
+     "L0/L4", "spanning",
+     "Provenance policy is an L0 governance decision; co-versioned model "
+     "variants are managed by L4."),
 
-    ("Governance",
-     "Responsible-AI policies and accountability structures, guardrails across "
-     "the AI lifecycle, governed data access and use, evaluation and "
-     "red-teaming processes.",
-     "L0/L2", "spanning",
-     "Policies and accountability are design-time L0 decisions, while runtime "
-     "guardrails (content safety, prompt shields) are L2 boundary controls."),
+    ("AI models",
+     "External, fine-tuned, or sovereign foundation models, optionally used "
+     "through N-version programming.",
+     "L4", "direct",
+     "Model access, selection, and provider policy."),
 ]
 
-# element name -> document that should still contain it
+# element names expected in the source text
 SOURCES = {
-    "Orchestrator agent": "building-blocks/Building-Blocks.md",
-    "Specialized agents": "building-blocks/Building-Blocks.md",
-    "Agents registry": "building-blocks/Building-Blocks.md",
-    "Memory": "memory/Memory.md",
-    "Security": "security/Security.md",
-    "Observability": "observability/Observability.md",
-    "Governance": "governance/Governance.md",
-    "Context engineering": "context-engineering/Context-Engineering.md",
+    "Context engineering": "context engineering",
+    "Prompt/response engineering": "prompt/response",
+    "Memory": "long-term memory",
+    "Planning": "plan generation",
+    "Cooperation with other agents": "cooperation",
+    "Execution engine": "task executor",
+    "Tool/agent selector and registry": "tool/agent selector",
+    "Guardrails": "guardrails",
+    "Recording and risk assessment": "black box recorder",
+    "AIBOM and co-versioning registries": "aibom",
+    "AI models": "sovereign",
 }
 
 
 def verify() -> int:
     print("Verifying element names against the published source\n")
+    try:
+        with urllib.request.urlopen(SOURCE_URL, timeout=60) as r:
+            text = r.read().decode(errors="ignore").lower()
+    except Exception as e:
+        print(f"  [SKIP] could not fetch {SOURCE_URL} ({e})")
+        return 1
     bad = 0
-    for element, doc in SOURCES.items():
-        url = f"{RAW}/{doc}"
-        try:
-            with urllib.request.urlopen(url, timeout=40) as r:
-                text = r.read().decode().lower()
-        except Exception as e:
-            print(f"  [SKIP] {element:22s} {doc} ({e})")
-            continue
-        head = element.lower().split()[0]
-        ok = head in text
-        print(f"  [{'OK ' if ok else 'MISS'}] {element:22s} <- {doc}")
+    for element, term in SOURCES.items():
+        ok = term in text
+        print(f"  [{'OK ' if ok else 'MISS'}] {element:34s} '{term}'")
         bad += 0 if ok else 1
     print(f"\n  {len(SOURCES) - bad}/{len(SOURCES)} element names confirmed")
     return 0 if bad == 0 else 1
@@ -177,11 +182,11 @@ def main() -> int:
               encoding="utf-8") as fh:
         json.dump({
             "source": {
-                "name": "Microsoft Multi-Agent Reference Architecture",
-                "site": "https://microsoft.github.io/"
-                        "multi-agent-reference-architecture/",
-                "repository": "https://github.com/microsoft/"
-                              "multi-agent-reference-architecture",
+                "name": "Lu et al., A Reference Architecture for Designing "
+                        "Foundation Model Based Agents (ICSA-C 2024)",
+                "doi": "10.1109/ICSA-C63560.2024.00028",
+                "text": SOURCE_URL,
+                "synthesis_source": False,
             },
             "summary": {
                 "elements": len(MAPPING), "direct": len(direct),

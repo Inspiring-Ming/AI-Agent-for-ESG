@@ -1,95 +1,104 @@
 {
   "source": {
-    "name": "Microsoft Multi-Agent Reference Architecture",
-    "site": "https://microsoft.github.io/multi-agent-reference-architecture/",
-    "repository": "https://github.com/microsoft/multi-agent-reference-architecture"
+    "name": "Lu et al., A Reference Architecture for Designing Foundation Model Based Agents (ICSA-C 2024)",
+    "doi": "10.1109/ICSA-C63560.2024.00028",
+    "text": "https://arxiv.org/html/2311.13148v3",
+    "synthesis_source": false
   },
   "summary": {
-    "elements": 10,
+    "elements": 11,
     "direct": 4,
-    "conditional": 2,
-    "spanning": 4,
+    "conditional": 1,
+    "spanning": 6,
     "responsibilities_touched": [
       "L0",
+      "L1",
       "L2",
       "L3",
+      "L4",
       "L5",
       "L6",
-      "L7",
       "L9"
     ],
     "outside_l0_l9": 0
   },
   "mapping": [
     {
-      "element": "Orchestrator agent",
-      "source_purpose": "Acts as central coordinator: receives incoming requests, formulates a high-level plan of tasks, delegates them to specialized agents, and aggregates their outputs into a final response.",
+      "element": "Context engineering",
+      "source_purpose": "Dialogue interface, multimodal context injection, and passive or proactive goal creators that collect and structure the context needed to understand the user's goals.",
+      "responsibility": "L1/L3",
+      "relation": "spanning",
+      "note": "Interaction surfaces belong to L1; interpreting goals belongs to L3."
+    },
+    {
+      "element": "Prompt/response engineering",
+      "source_purpose": "Prompt/response generator using templates and personas to produce prompts and responses aligned with the goal.",
       "responsibility": "L3",
       "relation": "direct",
-      "note": "Coordination of goal-directed execution without owning execution mechanisms."
-    },
-    {
-      "element": "Specialized agents",
-      "source_purpose": "Domain-focused experts, each responsible for a distinct area of expertise; may themselves coordinate sub-agents.",
-      "responsibility": "L3",
-      "relation": "conditional",
-      "note": "Instantiated only in multi-agent configurations; the ESG case uses a single coordinating agent."
-    },
-    {
-      "element": "Agents registry",
-      "source_purpose": "Centralized data service cataloguing each agent's identity, capabilities, operational status, version and metadata tags, enabling discovery and auditability.",
-      "responsibility": "L3",
-      "relation": "conditional",
-      "note": "Agent discovery; distinct from the L6 tool registry, which catalogues executable capabilities rather than agents."
-    },
-    {
-      "element": "Agents communication",
-      "source_purpose": "Request-based communication for tightly coupled or latency-sensitive interaction; message-driven communication via a broker or event bus for loose coupling and resilience.",
-      "responsibility": "L3/L7",
-      "relation": "spanning",
-      "note": "Coordination ownership remains in L3 while the message-driven variant is mediated by L7; the architecture separates these, the source groups them under one element."
+      "note": "Prompt and runtime configuration within coordination."
     },
     {
       "element": "Memory",
-      "source_purpose": "Holds what is true of this user, session and collaboration -- preferences, decisions, open issues, interaction history. The source states explicitly that memory is not a knowledge base: enterprise content is authoritative, shared, permission-controlled and changes independently of any conversation.",
+      "source_purpose": "Short-term memory (configuration, recent events, working context) within the model's context window; long-term memory (event history, knowledge and past experiences) outside it, moved in through memory retrieval.",
       "responsibility": "L3/L5",
       "relation": "spanning",
-      "note": "The source independently draws invariant I2: session-scoped state is distinguished from enterprise knowledge retrieved on demand through a permission-trimmed index."
+      "note": "In-context working state is execution-bound (L3); long-term knowledge and experience is reusable context (L5), consistent with I2."
     },
     {
-      "element": "Context engineering",
-      "source_purpose": "Designing, preparing and managing the information supplied to models to shape behaviour and results.",
-      "responsibility": "L5",
+      "element": "Planning",
+      "source_purpose": "Single- or multi-path plan generation with one-shot or incremental model querying, refined through self-, cross-, or human reflection.",
+      "responsibility": "L3",
       "relation": "direct",
-      "note": "Context assembly preceding inference."
+      "note": "Coordination; human reflection corresponds to conditional human interaction."
     },
     {
-      "element": "Security",
-      "source_purpose": "Identity enforcement with agents and orchestrators authenticating via an identity provider and RBAC governing execution permissions; policy-controlled tool invocation at the point of action.",
-      "responsibility": "L2/L6",
+      "element": "Cooperation with other agents",
+      "source_purpose": "Voting-, role-, and debate-based cooperation among agents.",
+      "responsibility": "L3",
+      "relation": "conditional",
+      "note": "Multi-agent collaboration; the case uses one agent."
+    },
+    {
+      "element": "Execution engine",
+      "source_purpose": "Task executor performing the planned tasks, using tools or other agents, and a task monitor managing queued tasks.",
+      "responsibility": "L3/L6",
       "relation": "spanning",
-      "note": "The source independently draws invariant I3: boundary identity enforcement is separated from authorization at the point of action."
+      "note": "The source places deciding and performing a task in one component; the proposed structure separates coordination (L3) from capability execution (L6), consistent with I1."
     },
     {
-      "element": "Observability",
-      "source_purpose": "Evaluation-driven observability over agent execution.",
+      "element": "Tool/agent selector and registry",
+      "source_purpose": "Search, rank, or generate tools and agents, drawing on a tool/agent registry or marketplace.",
+      "responsibility": "L3/L6",
+      "relation": "spanning",
+      "note": "Agent discovery is an L3 collaboration capability; the tool catalogue belongs to L6."
+    },
+    {
+      "element": "Guardrails",
+      "source_purpose": "Input, output, RAG, execution, and intermediate guardrails controlling the inputs and outputs of models, retrieval, and tools.",
+      "responsibility": "L2/L5/L6",
+      "relation": "spanning",
+      "note": "Boundary input/output controls (L2), retrieval constraints (L5), and permitted actions (L6): resource-specific enforcement, consistent with I3."
+    },
+    {
+      "element": "Recording and risk assessment",
+      "source_purpose": "Black box recorder of runtime data across components, continuous risk assessor of AI risk metrics, and explainer of outputs and rationale.",
       "responsibility": "L9",
       "relation": "direct",
-      "note": "Operational evidence collection and correlation."
+      "note": "Accountability and operational evidence."
     },
     {
-      "element": "Evaluation",
-      "source_purpose": "Assessment of system behaviour and quality.",
-      "responsibility": "L9",
-      "relation": "direct",
-      "note": "Evaluation evidence feeding improvement."
-    },
-    {
-      "element": "Governance",
-      "source_purpose": "Responsible-AI policies and accountability structures, guardrails across the AI lifecycle, governed data access and use, evaluation and red-teaming processes.",
-      "responsibility": "L0/L2",
+      "element": "AIBOM and co-versioning registries",
+      "source_purpose": "Supply-chain records of tools, agents, and models, used to refuse components of questionable provenance; co-versioning of model variants.",
+      "responsibility": "L0/L4",
       "relation": "spanning",
-      "note": "Policies and accountability are design-time L0 decisions, while runtime guardrails (content safety, prompt shields) are L2 boundary controls."
+      "note": "Provenance policy is an L0 governance decision; co-versioned model variants are managed by L4."
+    },
+    {
+      "element": "AI models",
+      "source_purpose": "External, fine-tuned, or sovereign foundation models, optionally used through N-version programming.",
+      "responsibility": "L4",
+      "relation": "direct",
+      "note": "Model access, selection, and provider policy."
     }
   ]
 }

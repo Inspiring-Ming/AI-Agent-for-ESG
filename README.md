@@ -182,12 +182,15 @@ one G5 execution (the model also computed the current WACI first) and where the
 number check flagged a figure the model had derived (one G2 and all three G4
 drafts), which was revised once. All 21 final answers passed the number check.
 
-**Boundary invariants** — 8 probes, all four invariants preserved, including
+**Boundary invariants** — 8 probes; I1–I3 preserved and I4 consistent (no L9
+correlation service is deployed), including
 the override gate (refused for the portfolio manager and for the submitter,
 accepted for the compliance officer).
 
-**Independent mapping** — 10 elements of Microsoft's Multi-Agent Reference
-Architecture; none required a responsibility outside L0–L9.
+**Independent mapping** — 11 component groups of Lu et al.'s reference
+architecture for foundation-model-based agents (ICSA-C 2024), which is not one
+of the 11 synthesis sources: 4 direct, 1 conditional, 6 spanning; none required
+a responsibility outside L0–L9.
 
 ## Scope and limitations
 
