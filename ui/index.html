@@ -6,152 +6,194 @@
 <title>ESG Portfolio Agent</title>
 <style>
   :root {
-    --ink:#16181d; --muted:#5b6170; --line:#e3e6ec; --bg:#f6f7f9; --card:#fff;
-    --accent:#2457c5; --ok:#1e7a46; --warn:#a4541b; --bad:#b42318;
+    --ink:#16181d; --muted:#5b6170; --line:#e3e6ec; --bg:#f5f6f8; --card:#fff;
+    --accent:#2457c5; --accent-soft:#eaf0fb; --ok:#1e7a46; --ok-soft:#e8f5ee;
+    --warn:#a4541b; --warn-soft:#fdf1e7; --bad:#b42318; --bad-soft:#fdecea;
     --L1:#3c9a4a; --L2:#c99a2e; --L3:#c94a4a; --L4:#8a55b5; --L5:#2f6db5; --L6:#2b8a6e;
   }
   * { box-sizing:border-box; }
-  body { margin:0; font:15px/1.5 -apple-system, "Segoe UI", Roboto, sans-serif;
-         color:var(--ink); background:var(--bg); }
-  header { padding:22px 28px 6px; }
-  h1 { margin:0 0 4px; font-size:22px; }
-  .lead { color:var(--muted); max-width:980px; margin:0 0 6px; }
-  main { display:grid; grid-template-columns:400px 1fr; gap:18px; padding:14px 28px 40px; }
-  @media (max-width:980px){ main { grid-template-columns:1fr; } }
-  .panel { background:var(--card); border:1px solid var(--line); border-radius:12px; padding:16px; }
+  body { margin:0; font:15px/1.5 -apple-system, "Segoe UI", Roboto, sans-serif; color:var(--ink); background:var(--bg); }
+  header { background:var(--card); border-bottom:1px solid var(--line); padding:16px 28px; display:flex; gap:16px; align-items:center; flex-wrap:wrap; }
+  header h1 { margin:0; font-size:20px; }
+  header .tag { color:var(--muted); font-size:14px; flex:1; min-width:260px; }
+  .who { font-size:13px; background:var(--accent-soft); color:var(--accent); border-radius:999px; padding:4px 12px; font-weight:600; }
+  .how { display:grid; grid-template-columns:repeat(3,1fr); gap:12px; padding:14px 28px 0; }
+  .how div { background:var(--card); border:1px solid var(--line); border-radius:10px; padding:10px 14px; font-size:13.5px; color:var(--muted); }
+  .how b { display:block; color:var(--ink); font-size:14px; }
+  main { display:grid; grid-template-columns:420px 1fr; gap:18px; padding:14px 28px 40px; align-items:start; }
+  @media (max-width:1000px){ main, .how { grid-template-columns:1fr; } }
+  .card { background:var(--card); border:1px solid var(--line); border-radius:12px; padding:16px; margin-bottom:14px; }
+  .card h2 { font-size:15px; margin:0 0 10px; display:flex; gap:8px; align-items:center; }
+  .stepno { width:22px; height:22px; border-radius:50%; background:var(--accent); color:#fff; font-size:12px; display:inline-flex; align-items:center; justify-content:center; }
   label { display:block; font-size:13px; font-weight:600; margin:12px 0 4px; }
-  input, select, textarea { width:100%; padding:7px 9px; border:1px solid #cdd2db; border-radius:8px;
-           font-size:14px; background:#fff; font-family:inherit; }
-  textarea { min-height:70px; resize:vertical; }
-  .row { display:grid; grid-template-columns:1fr 74px 28px; gap:6px; margin-bottom:6px; }
-  .row button { margin:0; padding:0; background:#eef0f4; color:var(--muted); font-size:16px; }
+  input, select, textarea { width:100%; padding:7px 9px; border:1px solid #cdd2db; border-radius:8px; font-size:14px; background:#fff; font-family:inherit; }
+  textarea { min-height:64px; resize:vertical; }
+  .row { display:grid; grid-template-columns:1fr 70px 28px; gap:6px; margin-bottom:6px; align-items:center; }
+  .xbtn { border:0; background:#eef0f4; color:var(--muted); border-radius:8px; height:32px; cursor:pointer; font-size:15px; }
+  .link { border:0; background:none; color:var(--accent); font-weight:600; font-size:13px; cursor:pointer; padding:2px 0; }
+  .total { font-size:12.5px; color:var(--muted); margin-top:4px; }
+  .mandate { margin-top:12px; background:#f7f8fa; border:1px solid var(--line); border-radius:10px; padding:10px 12px; font-size:13px; }
+  .mandate b { display:block; margin-bottom:4px; font-size:13px; }
+  .mandate ul { margin:0; padding-left:18px; color:var(--muted); }
   .two { display:grid; grid-template-columns:1fr 1fr; gap:8px; }
-  .small { font-size:12.5px; color:var(--muted); }
-  button { margin-top:14px; width:100%; padding:10px; border:0; border-radius:8px;
-           background:var(--accent); color:#fff; font-size:15px; font-weight:600; cursor:pointer; }
-  button.link { background:none; color:var(--accent); padding:2px 0; margin:4px 0 0; width:auto; font-size:13px; font-weight:600; }
-  button:disabled { opacity:.6; cursor:wait; }
-  .presets { margin-top:14px; border-top:1px solid var(--line); padding-top:10px; }
-  .presets p { margin:0 0 6px; font-size:13px; font-weight:600; }
-  .presets a { display:block; font-size:13px; color:var(--accent); cursor:pointer; padding:3px 0; }
-  .card { background:var(--card); border:1px solid var(--line); border-radius:12px; padding:14px 16px; margin-bottom:14px; }
+  .chips { display:flex; flex-wrap:wrap; gap:6px; margin-bottom:8px; }
+  .chip-q { border:1px solid #cdd7ee; background:var(--accent-soft); color:var(--accent); border-radius:999px; padding:4px 10px; font-size:12.5px; cursor:pointer; }
+  .chip-q:hover { background:#dce6f8; }
+  .primary { margin-top:12px; width:100%; padding:11px; border:0; border-radius:8px; background:var(--accent); color:#fff; font-size:15px; font-weight:600; cursor:pointer; }
+  .primary:disabled { opacity:.6; cursor:wait; }
+  .note { font-size:12px; color:var(--muted); margin-top:8px; }
+  .examples { display:grid; grid-template-columns:repeat(auto-fill,minmax(230px,1fr)); gap:10px; }
+  .ex-card { border:1px solid var(--line); border-radius:10px; padding:10px 12px; cursor:pointer; background:#fff; }
+  .ex-card:hover { border-color:var(--accent); }
+  .ex-card b { display:block; font-size:14px; }
+  .ex-card span { font-size:12.5px; color:var(--muted); }
+  .progress { display:flex; flex-direction:column; gap:8px; font-size:14px; }
+  .progress .p { color:var(--muted); }
+  .progress .p.on { color:var(--ink); font-weight:600; }
+  .progress .p.on::before { content:"⏳ "; }
+  .progress .p.done::before { content:"✓ "; color:var(--ok); }
+  .status { display:flex; gap:10px; align-items:center; flex-wrap:wrap; margin-bottom:8px; }
+  .badge { display:inline-block; font-size:12.5px; font-weight:700; padding:3px 10px; border-radius:999px; }
+  .b-ok { background:var(--ok-soft); color:var(--ok); } .b-warn { background:var(--warn-soft); color:var(--warn); }
+  .b-bad { background:var(--bad-soft); color:var(--bad); } .b-muted { background:#eef0f4; color:var(--muted); }
+  .answer { font-size:14.5px; line-height:1.6; }
+  .check { font-size:12.5px; color:var(--muted); margin-top:10px; border-top:1px dashed var(--line); padding-top:8px; }
   .big { font-size:30px; font-weight:700; line-height:1.1; }
+  .unit { font-size:13px; color:var(--muted); font-weight:400; }
   .muted { color:var(--muted); font-size:13.5px; }
-  .answer { margin-top:8px; padding:10px 12px; background:#f2f5fb; border-radius:8px; font-size:14px; }
-  .badge { display:inline-block; font-size:12px; font-weight:700; padding:2px 8px; border-radius:6px; color:#fff; }
-  table { border-collapse:collapse; width:100%; font-size:13.5px; margin-top:8px; }
-  th, td { text-align:left; padding:5px 8px; border-bottom:1px solid var(--line); }
-  th { color:var(--muted); font-weight:600; font-size:12.5px; }
-  td.n, th.n { text-align:right; font-variant-numeric:tabular-nums; }
-  .bar { height:8px; background:#e9ecf2; border-radius:4px; overflow:hidden; min-width:80px; }
+  table.t { border-collapse:collapse; width:100%; font-size:13.5px; margin-top:8px; }
+  table.t th, table.t td { text-align:left; padding:5px 8px; border-bottom:1px solid var(--line); }
+  table.t th { color:var(--muted); font-weight:600; font-size:12.5px; }
+  .n { text-align:right !important; font-variant-numeric:tabular-nums; }
+  .bar { height:8px; background:#e9ecf2; border-radius:4px; overflow:hidden; min-width:70px; }
   .bar i { display:block; height:100%; background:var(--warn); }
-  .tradecard { border:2px solid var(--warn); }
-  .tradecard button { width:auto; padding:8px 16px; margin-right:8px; }
-  .reject { background:#6b7280 !important; }
-  h2 { font-size:16px; margin:20px 0 10px; }
-  .step { display:grid; grid-template-columns:34px 1fr; gap:12px; margin-bottom:10px; }
-  .num { width:30px; height:30px; border-radius:50%; background:var(--accent); color:#fff;
-         display:flex; align-items:center; justify-content:center; font-weight:700; font-size:13px; }
-  .step .body { background:var(--card); border:1px solid var(--line); border-radius:10px; padding:9px 12px; }
-  .step .title { font-weight:700; }
-  .why { color:var(--muted); font-size:13px; margin:2px 0 6px; }
-  .ex { display:flex; gap:8px; align-items:center; font-size:13.5px; padding:3px 0; border-top:1px dashed var(--line); flex-wrap:wrap; }
-  .ex:first-of-type { border-top:0; }
-  .chip { padding:1px 7px; border-radius:6px; color:#fff; font-size:12px; font-weight:700; white-space:nowrap; }
-  .arrow { color:var(--muted); }
-  .type { font-size:11.5px; font-weight:700; border:1px solid #c8ccd6; border-radius:5px; padding:0 5px; color:var(--muted); }
-  .summary { display:flex; gap:10px; flex-wrap:wrap; }
-  .summary span { background:var(--card); border:1px solid var(--line); border-radius:8px; padding:6px 10px; font-size:13px; }
-  .legend { font-size:13px; color:var(--muted); margin-top:16px; line-height:1.9; }
-  .existing { font-size:11px; color:var(--L5); border:1px solid var(--L5); border-radius:5px; padding:0 4px; }
-  .err { color:var(--bad); white-space:pre-wrap; }
+  .limits { list-style:none; padding:0; margin:8px 0 0; font-size:13.5px; }
+  .limits li { padding:4px 0; }
+  .limits li::before { margin-right:6px; }
+  .limits li.pass::before { content:"✓"; color:var(--ok); font-weight:700; }
+  .limits li.fail::before { content:"✗"; color:var(--bad); font-weight:700; }
+  .actions { margin-top:12px; display:flex; gap:8px; flex-wrap:wrap; align-items:center; }
+  .actions button { border:0; border-radius:8px; padding:8px 14px; font-weight:600; cursor:pointer; color:#fff; background:var(--accent); }
+  .actions button.grey { background:#6b7280; }
+  .actions button.link { background:none; color:var(--accent); padding:2px 0; }
+  .actions button:disabled { opacity:.5; cursor:default; }
+  details { background:var(--card); border:1px solid var(--line); border-radius:12px; padding:12px 16px; }
+  summary { cursor:pointer; font-weight:600; }
+  .step { display:grid; grid-template-columns:30px 1fr; gap:10px; margin-top:10px; }
+  .num { width:26px; height:26px; border-radius:50%; background:#e3e8f3; color:var(--accent); display:flex; align-items:center; justify-content:center; font-weight:700; font-size:12px; }
+  .step .body { border:1px solid var(--line); border-radius:10px; padding:8px 12px; }
+  .step .title { font-weight:600; font-size:14px; }
+  .why { color:var(--muted); font-size:13px; margin:2px 0 4px; }
+  .ex { display:flex; gap:8px; align-items:center; font-size:13px; padding:3px 0; flex-wrap:wrap; }
+  .lchip { padding:1px 7px; border-radius:6px; color:#fff; font-size:11.5px; font-weight:700; }
+  .type { font-size:11px; font-weight:700; border:1px solid #c8ccd6; border-radius:5px; padding:0 5px; color:var(--muted); }
+  .legend { font-size:12.5px; color:var(--muted); margin:10px 0 0; line-height:1.9; }
+  .err { color:var(--bad); }
 </style>
 </head>
 <body>
 <header>
   <h1>ESG Portfolio Agent</h1>
-  <p class="lead">For portfolio managers and sustainability analysts who must report a fund's carbon footprint
-  (TCFD, SFDR). Give your holdings and ask a question in plain language. A language model (Claude) decides each
-  step: it finds the carbon-intensity metric in the ESG knowledge graph, has the ESG system compute it for each
-  holding, computes the portfolio's <b>weighted average carbon intensity (WACI)</b>, and runs a <b>pre-trade
-  compliance check</b> of a proposed trade against the fund's ESG mandate (WACI ≤ 150; at most 25% in holdings with
-  intensity above 300; no holding above 35%). A trade that breaches the mandate is held until a <b>compliance
-  officer</b> approves an override. The agent never calculates numbers itself; every figure comes from the ESG system
-  or the portfolio service and is checked.</p>
-  <p class="lead small">Fund: ESG Semiconductor Fund (illustrative mandate). No order management system is connected,
-  so cleared trades are recorded, never executed. Demo data covers semiconductor companies.</p>
+  <div class="tag">Ask about your fund's carbon footprint in plain language, and check trades against the fund's ESG rules before they are placed.</div>
+  <div class="who">Signed in as: Portfolio Manager</div>
 </header>
 
+<section class="how">
+  <div><b>1 · Set up your fund</b>Holdings and weights. The fund's ESG rules are fixed by compliance.</div>
+  <div><b>2 · Ask a question</b>Pick an example or type your own. The agent looks up the metric, has the ESG system compute it, and checks trades.</div>
+  <div><b>3 · Review the answer</b>Every number comes from the ESG system and is checked. Trades that break a rule need a compliance officer's approval.</div>
+</section>
+
 <main>
-  <div class="panel">
-    <label>Portfolio holdings (weight %)</label>
-    <div id="rows"></div>
-    <button class="link" id="add">+ add holding</button>
-    <div class="small" id="total"></div>
-    <div class="two">
-      <div><label for="year">Year</label>
-        <select id="year"><option>2023</option><option>2022</option><option>2021</option></select></div>
-      <div><label for="cmp">Compare with</label>
-        <select id="cmp"><option value="">—</option><option>2022</option><option>2021</option><option>2023</option></select></div>
-    </div>
-    <label for="q">Question</label>
-    <textarea id="q">What is the carbon intensity of my portfolio, and which holdings drive it?</textarea>
-    <button id="run">Ask the agent</button>
-
-    <div class="presets">
-      <p>Try these</p>
-      <a data-p="P1">Portfolio carbon intensity and its drivers</a>
-      <a data-p="P2">Has it improved since 2022?</a>
-      <a data-p="P3">A holding with missing data</a>
-      <a data-p="P4">Trade within the mandate: submit it</a>
-      <a data-p="P5">Trade breaching the mandate: request an override</a>
-      <a data-p="P6">A question the data cannot answer</a>
+  <div>
+    <div class="card">
+      <h2><span class="stepno">1</span> Your fund: ESG Semiconductor Fund</h2>
+      <div id="rows"></div>
+      <button class="link" id="add">+ add holding</button>
+      <div class="total" id="total"></div>
+      <div class="mandate"><b>Fund rules (set by compliance)</b>
+        <ul>
+          <li>Portfolio carbon intensity (WACI) ≤ 150</li>
+          <li>At most 25% in companies with intensity above 300</li>
+          <li>No single holding above 35%</li>
+        </ul>
+      </div>
+      <div class="note">Carbon intensity = tonnes CO₂e (Scope 1 + 2) per USD million of revenue. Companies marked "no revenue data" cannot be computed.</div>
     </div>
 
-    <div class="legend">
-      <b>Parts of the architecture</b><br>
-      <span class="chip" style="background:var(--L1)">L1</span> this page<br>
-      <span class="chip" style="background:var(--L2)">L2</span> access gate (sign-in, roles)<br>
-      <span class="chip" style="background:var(--L3)">L3</span> the agent (decides)<br>
-      <span class="chip" style="background:var(--L4)">L4</span> Claude model access<br>
-      <span class="chip" style="background:var(--L5)">L5</span> ESG knowledge graph <span class="existing">existing</span><br>
-      <span class="chip" style="background:var(--L6)">L6</span> ESG computation <span class="existing">existing</span>, portfolio &amp; compliance service, override gate
+    <div class="card">
+      <h2><span class="stepno">2</span> Your question</h2>
+      <div class="chips" id="chips"></div>
+      <textarea id="q" aria-label="question">What is the carbon intensity of my portfolio, and which holdings drive it?</textarea>
+      <div class="two">
+        <div><label for="year">Year</label>
+          <select id="year"><option>2023</option><option>2022</option><option>2021</option></select></div>
+        <div><label for="cmp">Compare with (optional)</label>
+          <select id="cmp"><option value="">—</option><option>2022</option><option>2021</option><option>2023</option></select></div>
+      </div>
+      <button class="primary" id="run">Ask the agent</button>
+      <div class="note">A run takes about 20–40 seconds. Analysis only: no order is ever placed.</div>
     </div>
   </div>
 
-  <div id="out"><p class="muted">Set up a portfolio and press <b>Ask the agent</b>. A run takes about 20–40 seconds.</p></div>
+  <div id="out"></div>
 </main>
 
 <script>
 const $ = (id) => document.getElementById(id);
-const CHIP = (r) => `<span class="chip" style="background:var(--${r})">${r}</span>`;
 const H = { "ngrok-skip-browser-warning": "1" };
 const TOKENS = {};
 let COMPANIES = [];
+let TIMER = null;
+
+const LCHIP = (r) => `<span class="lchip" style="background:var(--${r})">${r}</span>`;
+const esc = (s) => String(s ?? "").replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+const fmt = (x) => (x == null ? "—" : Number(x).toLocaleString(undefined, { maximumFractionDigits: 2 }));
+
+// Minimal markdown for the model's answer: bold, bullet lists, tables, paragraphs.
+function md(src) {
+  const lines = esc(src || "").split("\n");
+  let html = "", list = false, table = [];
+  const inline = (t) => t.replace(/\*\*(.+?)\*\*/g, "<b>$1</b>");
+  const flushTable = () => {
+    if (!table.length) return;
+    const rows = table.filter(r => !/^\|\s*:?-/.test(r)).map(r => r.replace(/^\||\|$/g, "").split("|").map(c => inline(c.trim())));
+    html += `<table class="t"><tr>${rows[0].map(c => `<th>${c}</th>`).join("")}</tr>` +
+      rows.slice(1).map(r => `<tr>${r.map(c => `<td>${c}</td>`).join("")}</tr>`).join("") + "</table>";
+    table = [];
+  };
+  for (const l of lines) {
+    if (/^\s*\|/.test(l)) { table.push(l.trim()); continue; } else flushTable();
+    if (/^\s*[-•]\s+/.test(l)) { if (!list) { html += "<ul>"; list = true; } html += `<li>${inline(l.replace(/^\s*[-•]\s+/, ""))}</li>`; continue; }
+    if (list) { html += "</ul>"; list = false; }
+    if (l.trim()) html += `<p style="margin:6px 0">${inline(l)}</p>`;
+  }
+  flushTable(); if (list) html += "</ul>";
+  return html;
+}
 
 async function call(url, opts = {}) {
   let r;
   for (let i = 0; i < 2; i++) {
     try { r = await fetch(url, { ...opts, headers: { ...H, ...(opts.headers || {}) } }); break; }
-    catch (e) { if (i) throw new Error("Could not reach the agent service (network error). Please try again."); }
+    catch (e) { if (i) throw new Error("Could not reach the agent service. Please check your connection and try again."); }
   }
   const d = await r.json().catch(() => ({}));
-  if (!r.ok) throw new Error(d.detail ? (typeof d.detail === "string" ? d.detail : JSON.stringify(d.detail)) : r.statusText);
+  if (!r.ok) throw new Error(typeof d.detail === "string" ? d.detail : (d.detail ? JSON.stringify(d.detail) : r.statusText));
   return d;
 }
 async function token(role) {
   if (!TOKENS[role]) TOKENS[role] = (await call(`/api/session?role=${role}`, { method: "POST" })).token;
   return TOKENS[role];
 }
-const esc = (s) => String(s ?? "").replace(/[&<>]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;" }[c]));
-const md = (s) => esc(s).replace(/\*\*(.+?)\*\*/g, "<b>$1</b>").replace(/\n/g, "<br>");
-const fmt = (x) => (x == null ? "—" : Number(x).toLocaleString(undefined, { maximumFractionDigits: 2 }));
 
-// ---------------- portfolio editor ----------------
+// ---------------- fund editor ----------------
 function addRow(company, weight) {
   const div = document.createElement("div"); div.className = "row";
-  const opts = COMPANIES.map(c => `<option ${c.name === company ? "selected" : ""} value="${esc(c.name)}">${esc(c.name)}${c.covered ? "" : " (no revenue data)"}</option>`).join("");
-  div.innerHTML = `<select>${opts}</select><input type="number" min="0" max="100" step="0.5" value="${weight}"><button title="remove">×</button>`;
+  const opts = COMPANIES.map(c => `<option ${c.name === company ? "selected" : ""} value="${esc(c.name)}">${esc(c.name)}${c.covered ? "" : " — no revenue data"}</option>`).join("");
+  div.innerHTML = `<select aria-label="company">${opts}</select>
+    <input type="number" aria-label="weight %" min="0" max="100" step="0.5" value="${weight}">
+    <button class="xbtn" title="Remove holding">×</button>`;
   div.querySelector("button").onclick = () => { div.remove(); total(); };
   div.querySelector("input").oninput = total;
   $("rows").appendChild(div); total();
@@ -162,119 +204,155 @@ function holdings() {
 }
 function total() {
   const t = holdings().reduce((a, h) => a + h.weight_pct, 0);
-  $("total").innerHTML = `Total weight: <b style="color:${Math.abs(t - 100) < 0.5 ? "var(--ok)" : "var(--bad)"}">${t}%</b> (must be 100%)`;
+  const ok = Math.abs(t - 100) < 0.5;
+  $("total").innerHTML = `Total: <b style="color:${ok ? "var(--ok)" : "var(--bad)"}">${fmt(t)}%</b>${ok ? "" : " — weights must add up to 100%"}`;
+  $("run").disabled = !ok;
 }
-function setPortfolio(list) { $("rows").innerHTML = ""; list.forEach(([c, w]) => addRow(c, w)); }
+function setFund(list) { $("rows").innerHTML = ""; list.forEach(([c, w]) => addRow(c, w)); }
 
 const BASE = [["STMicroelectronics NV", 30], ["Infineon Technologies AG", 25], ["Micron Technology Inc", 25], ["NXP Semiconductors NV", 20]];
-const PRESETS = {
-  P1: { p: BASE, year: "2023", cmp: "", q: "What is the carbon intensity of my portfolio, and which holdings drive it?" },
-  P2: { p: BASE, year: "2023", cmp: "2022", q: "Has my portfolio's carbon intensity improved since 2022? What changed?" },
-  P3: { p: [["STMicroelectronics NV", 30], ["Infineon Technologies AG", 25], ["Micron Technology Inc", 25], ["Taiwan Semiconductor Manufacturing Co Ltd", 20]],
-        year: "2023", cmp: "", q: "What is the carbon intensity of my portfolio, and which holdings drive it?" },
-  P4: { p: BASE, year: "2023", cmp: "", q: "I want to buy 5 percentage points more NXP, funded by selling Infineon. Check it against the fund's mandate and submit it if it complies." },
-  P5: { p: BASE, year: "2023", cmp: "", q: "I want to buy 5 percentage points more Micron, funded by selling Infineon. Check it against the fund's mandate. If it breaches, submit it anyway as an override: Micron has committed to cutting emissions and we want to support the transition." },
-  P6: { p: BASE, year: "2023", cmp: "", q: "Which of these stocks should I buy now, and what will their share prices be next quarter?" },
-};
-
-// ---------------- rendering ----------------
-const STATUS = { success: ["Answered", "var(--ok)"], cleared: ["Trade cleared", "var(--ok)"],
-                 pending_override: ["Awaiting compliance override", "var(--warn)"],
-                 unsatisfiable: ["Could not answer", "var(--muted)"], failed: ["Failed", "var(--bad)"] };
-
-function exchange(x) {
-  return `<div class="ex">${CHIP(x.source)} <span class="arrow">→</span> ${CHIP(x.target)}
-    <span class="type">${x.type}</span> <span>${esc(x.text)}</span></div>`;
+const EXAMPLES = [
+  { t: "Carbon footprint and drivers", d: "Portfolio carbon intensity and which holdings drive it",
+    p: BASE, cmp: "", q: "What is the carbon intensity of my portfolio, and which holdings drive it?" },
+  { t: "Change since 2022", d: "Has the fund's carbon intensity improved?",
+    p: BASE, cmp: "2022", q: "Has my portfolio's carbon intensity improved since 2022? What changed?" },
+  { t: "Holding without data", d: "TSMC has no revenue data; see how the agent handles it",
+    p: [["STMicroelectronics NV", 30], ["Infineon Technologies AG", 25], ["Micron Technology Inc", 25], ["Taiwan Semiconductor Manufacturing Co Ltd", 20]],
+    cmp: "", q: "What is the carbon intensity of my portfolio, and which holdings drive it?" },
+  { t: "Trade within the rules", d: "Buy more NXP, sell Infineon: checked and cleared",
+    p: BASE, cmp: "", q: "I want to buy 5 percentage points more NXP, funded by selling Infineon. Check it against the fund's mandate and submit it if it complies." },
+  { t: "Trade breaking the rules", d: "Buy more Micron: blocked, needs a compliance override",
+    p: BASE, cmp: "", q: "I want to buy 5 percentage points more Micron, funded by selling Infineon. Check it against the fund's mandate. If it breaches, submit it anyway as an override: Micron has committed to cutting emissions and we want to support the transition." },
+  { t: "Out-of-scope question", d: "Share-price forecasts: the agent declines",
+    p: BASE, cmp: "", q: "Which of these stocks should I buy now, and what will their share prices be next quarter?" },
+];
+function useExample(i, runNow) {
+  const e = EXAMPLES[i]; setFund(e.p); $("year").value = "2023"; $("cmp").value = e.cmp; $("q").value = e.q;
+  if (runNow) run();
 }
 
-function portfolioCard(p, title) {
+function welcome() {
+  $("out").innerHTML = `<div class="card"><h2>What you can ask</h2>
+    <div class="muted" style="margin-bottom:10px">Click an example to load and run it, or set up your fund on the left and type your own question.</div>
+    <div class="examples">${EXAMPLES.map((e, i) => `<div class="ex-card" onclick="useExample(${i}, true)"><b>${esc(e.t)}</b><span>${esc(e.d)}</span></div>`).join("")}</div></div>`;
+}
+
+// ---------------- results ----------------
+const STATUS = {
+  success: ["Answered", "b-ok"], cleared: ["Trade cleared", "b-ok"],
+  pending_override: ["Trade blocked: needs compliance approval", "b-warn"],
+  unsatisfiable: ["Cannot be answered from the data", "b-muted"], failed: ["Failed", "b-bad"] };
+const LIMIT = { max_waci: "Portfolio carbon intensity (WACI) ≤ 150",
+                max_high_intensity_weight_pct: "At most 25% in companies above 300",
+                max_single_weight_pct: "No single holding above 35%" };
+
+function answerCard(d) {
+  const [label, cls] = STATUS[d.status] || [d.status, "b-muted"];
+  const g = d.grounding || {};
+  const check = g.grounded
+    ? `✓ Number check passed: every number above comes from your request or from the ESG system.${g.revisions ? ` (A first draft contained a number the model had calculated itself — ${g.flagged_in_draft.join(", ")} — so it was rewritten.)` : ""}`
+    : `✗ Number check: ${esc((g.unsupported || []).join(", "))} could not be traced to the ESG system.`;
+  return `<div class="card"><div class="status"><span class="badge ${cls}">${label}</span></div>
+    <div class="answer">${md(d.answer || d.error)}</div><div class="check">${check}</div></div>`;
+}
+
+function portfolioCard(p, year) {
   if (!p || p.waci == null) return "";
   const rows = (p.contributions || []).map(c => `<tr><td>${esc(c.company)}</td><td class="n">${fmt(c.weight_pct)}%</td>
-      <td class="n">${fmt(c.intensity)}</td><td class="n">${fmt(c.contribution)}</td>
-      <td><div class="bar"><i style="width:${c.share_of_waci_pct}%"></i></div></td><td class="n">${fmt(c.share_of_waci_pct)}%</td></tr>`).join("");
+      <td class="n">${fmt(c.intensity)}</td><td><div class="bar"><i style="width:${c.share_of_waci_pct}%"></i></div></td><td class="n">${fmt(c.share_of_waci_pct)}%</td></tr>`).join("");
   const miss = (p.not_covered || []).map(c => `<tr><td>${esc(c.company)}</td><td class="n">${fmt(c.weight_pct)}%</td>
-      <td colspan="4" class="err">not included: ${esc(c.reason)}</td></tr>`).join("");
-  const ch = p.change ? `<div class="muted">Change ${p.change.from_year} → ${p.change.to_year}:
-      <b>${fmt(p.change.from_waci)} → ${fmt(p.change.to_waci)}</b> (${p.change.change_pct > 0 ? "+" : ""}${fmt(p.change.change_pct)}%)</div>` : "";
-  return `<div class="card"><div class="muted">${title}</div>
-    <div class="big">${fmt(p.waci)} <span class="muted">${esc(p.unit)}</span></div>
-    <div class="muted">covers ${fmt(p.covered_weight_pct)}% of the portfolio by weight</div>${ch}
-    <table><tr><th>Holding</th><th class="n">Weight</th><th class="n">Intensity</th><th class="n">Contribution</th><th></th><th class="n">Share</th></tr>${rows}${miss}</table></div>`;
+      <td colspan="3" class="err">not included — ${esc(c.reason)}</td></tr>`).join("");
+  const ch = p.change ? `<div class="muted">${p.change.from_year} → ${p.change.to_year}: ${fmt(p.change.from_waci)} → <b>${fmt(p.change.to_waci)}</b>
+      (${p.change.change_pct > 0 ? "+" : ""}${fmt(p.change.change_pct)}%)</div>` : "";
+  return `<div class="card"><h2>Portfolio carbon intensity, ${year}</h2>
+    <div class="big">${fmt(p.waci)} <span class="unit">t CO₂e per USD million revenue</span></div>
+    <div class="muted">Covers ${fmt(p.covered_weight_pct)}% of the fund by weight</div>${ch}
+    <table class="t"><tr><th>Holding</th><th class="n">Weight</th><th class="n">Intensity</th><th>Share of total</th><th></th></tr>${rows}${miss}</table></div>`;
 }
 
-const LIMIT = { max_waci: "Portfolio WACI", max_high_intensity_weight_pct: "Weight in holdings above 300",
-                max_single_weight_pct: "Single-holding weight" };
-
-function checkCard(c) {
+function checkCard(c, trade) {
+  const lim = Object.keys(LIMIT).map(k => {
+    const b = (c.breaches || []).find(x => x.limit === k);
+    return `<li class="${b ? "fail" : "pass"}">${LIMIT[k]}${b ? ` — would be <b>${fmt(b.actual)}${k === "max_waci" ? "" : "%"}</b>` : ""}</li>`;
+  }).join("");
   const rows = (c.trades || []).map(t => `<tr><td>${esc(t.company)}</td><td class="n">${fmt(t.from_pct)}%</td><td class="n">${fmt(t.to_pct)}%</td></tr>`).join("");
-  const br = (c.breaches || []).map(b => `<li>${esc(LIMIT[b.limit] || b.limit)}${b.company ? " (" + esc(b.company) + ")" : ""}:
-      <b>${fmt(b.actual)}</b> vs limit ${fmt(b.limit_value)}</li>`).join("");
-  return `<div class="card"><b>Pre-trade compliance check</b>
-    <span class="badge" style="background:${c.compliant ? "var(--ok)" : "var(--bad)"}">${c.compliant ? "within mandate" : "breaches mandate"}</span>
-    <div class="muted">WACI ${fmt(c.waci_before)} → <b>${fmt(c.waci_after)}</b> (${c.waci_change_pct > 0 ? "+" : ""}${fmt(c.waci_change_pct)}%)</div>
-    <table><tr><th>Holding</th><th class="n">From</th><th class="n">To</th></tr>${rows}</table>
-    ${br ? `<ul class="err" style="margin:8px 0 0">${br}</ul>` : ""}</div>`;
+  let action = "";
+  if (trade) {
+    const held = trade.status === "pending_override";
+    action = held
+      ? `<div class="actions" id="trade-actions">
+           <span class="badge b-warn">Blocked: waiting for a compliance officer</span>
+           <button onclick="decide('${trade.trade_id}','approve','compliance_officer')">Approve override (as compliance officer)</button>
+           <button class="grey" onclick="decide('${trade.trade_id}','reject','compliance_officer')">Reject</button>
+           <button class="link" onclick="decide('${trade.trade_id}','approve','portfolio_manager')">Try approving it yourself</button></div>
+         <div class="note">In practice the compliance officer is a different person who signs in separately; here you can switch role to see the rule work. Whoever submitted a trade can never approve its override.</div>`
+      : `<div class="actions"><span class="badge b-ok">Cleared</span><span class="muted">Recorded for execution (no order system is connected, so nothing is placed).</span></div>`;
+    action += `<div id="decision"></div>`;
+  }
+  return `<div class="card"><h2>Pre-trade compliance check</h2>
+    <div class="muted">Portfolio carbon intensity ${fmt(c.waci_before)} → <b>${fmt(c.waci_after)}</b></div>
+    <table class="t"><tr><th>Holding</th><th class="n">Weight now</th><th class="n">After trade</th></tr>${rows}</table>
+    <ul class="limits">${lim}</ul>${action}</div>`;
 }
 
-function tradeCard(t) {
-  if (!t) return "";
-  const held = t.status === "pending_override";
-  return `<div class="card tradecard" id="trade"><b>Trade submitted</b>
-    <span class="badge" style="background:${held ? "var(--warn)" : "var(--ok)"}">${held ? "held: needs compliance officer override" : esc(t.status)}</span>
-    <div class="muted">${esc(t.note)} (trade ${esc(t.trade_id)})</div>
-    ${held ? `<div style="margin-top:10px"><button onclick="decide('${t.trade_id}','approve')">Approve override as compliance officer</button>
-      <button class="reject" onclick="decide('${t.trade_id}','reject')">Reject</button>
-      <button class="link" onclick="decide('${t.trade_id}','approve','portfolio_manager')">Try approving as the portfolio manager</button></div>` : ""}
-    <div id="decision"></div></div>`;
+function exchange(x) {
+  return `<div class="ex">${LCHIP(x.source)} → ${LCHIP(x.target)} <span class="type">${x.type}</span> ${esc(x.text)}</div>`;
+}
+
+function traceSection(d) {
+  const s = d.summary;
+  let h = `<details><summary>How the agent got there — ${d.steps.length} steps, ${s.occurrences} interactions between architecture parts</summary>
+    <div class="legend">Parts: ${LCHIP("L1")} this page · ${LCHIP("L2")} access control · ${LCHIP("L3")} the agent ·
+      ${LCHIP("L4")} AI model (${esc(s.model)}) · ${LCHIP("L5")} ESG knowledge graph · ${LCHIP("L6")} ESG computation, portfolio &amp; compliance services.
+      T1–T5 are the interaction types of the reference architecture. L5 and L6 are reached through ${esc(s.mechanism)}.</div>`;
+  h += `<div class="step"><div class="num">→</div><div class="body"><div class="title">Request received and access checked</div>${d.entry.map(exchange).join("")}</div></div>`;
+  d.steps.forEach((st, i) => {
+    const why = ["decide", "answer", "answer_flagged"].includes(st.action) ? `<div class="why">${esc(st.why).slice(0, 260)}</div>` : "";
+    h += `<div class="step"><div class="num">${i + 1}</div><div class="body"><div class="title">${esc(st.label)}</div>${why}${st.exchanges.map(exchange).join("")}</div></div>`;
+  });
+  h += `<div class="step"><div class="num">✓</div><div class="body"><div class="title">Answer returned (checked on the way out)</div>${d.exit.map(exchange).join("")}</div></div></details>`;
+  return h;
 }
 
 function render(d) {
-  const [label, color] = STATUS[d.status] || [d.status, "var(--muted)"];
-  let h = `<div class="card"><span class="badge" style="background:${color}">${label}</span>
-      ${d.grounding ? `<span class="muted" style="margin-left:8px">Number check: <b style="color:${d.grounding.grounded ? "var(--ok)" : "var(--bad)"}">${d.grounding.grounded ? "every number traced to the ESG system or portfolio service" : "unsupported: " + d.grounding.unsupported.join(", ")}</b>${d.grounding.revisions ? ` (draft revised once; it had derived ${d.grounding.flagged_in_draft.join(", ")})` : ""}</span>` : ""}
-      <div class="answer">${md(d.answer || d.error || "")}</div></div>`;
-  const years = Object.keys(d.portfolio_by_year || {}).sort().reverse();
-  years.forEach(y => h += portfolioCard(d.portfolio_by_year[y], `Portfolio carbon intensity (WACI), ${y}`));
-  (d.trade_checks || []).forEach(c => h += checkCard(c));
-  h += tradeCard(d.trade);
-
-  h += `<h2>How the agent got there</h2>`;
-  h += `<div class="step"><div class="num">→</div><div class="body"><div class="title">Request admitted</div>${d.entry.map(exchange).join("")}</div></div>`;
-  d.steps.forEach((s, i) => {
-    h += `<div class="step"><div class="num">${i + 1}</div><div class="body"><div class="title">${esc(s.label)}</div>
-      ${["decide", "answer", "answer_flagged"].includes(s.action) ? `<div class="why">${esc(s.why).slice(0, 300)}</div>` : ""}
-      ${s.exchanges.map(exchange).join("")}</div></div>`;
-  });
-  h += `<div class="step"><div class="num">✓</div><div class="body"><div class="title">Answer returned</div>
-      <div class="why">The access gate checks the outgoing answer</div>${d.exit.map(exchange).join("")}</div></div>`;
-  const s = d.summary;
-  h += `<h2>In architecture terms</h2><div class="summary">
-      <span><b>${s.occurrences}</b> interaction occurrences</span>
-      <span>types: <b>${s.types.join(", ")}</b></span>
-      <span>parts used: ${s.responsibilities.map(CHIP).join(" ")}</span>
-      <span><b>${s.model_calls}</b> model calls (${esc(s.model)})</span>
-      <span>L5/L6 via <b>${esc(s.mechanism)}</b></span></div>`;
+  let h = answerCard(d);
+  Object.keys(d.portfolio_by_year || {}).sort().reverse().forEach(y => h += portfolioCard(d.portfolio_by_year[y], y));
+  const checks = d.trade_checks || [];
+  checks.forEach((c, i) => h += checkCard(c, i === checks.length - 1 ? d.trade : null));
+  if (!checks.length && d.trade) h += checkCard(d.trade, d.trade);
+  h += traceSection(d);
   $("out").innerHTML = h;
 }
 
-async function decide(tid, decision, role = "compliance_officer") {
+async function decide(tid, decision, role) {
   const box = $("decision");
-  box.innerHTML = `<p class="muted">Sending decision…</p>`;
+  box.innerHTML = `<p class="muted">Sending…</p>`;
   try {
-    const d = await call(`/api/trades/${tid}/${decision}`, { method: "POST",
-      headers: { "Authorization": `Bearer ${await token(role)}` } });
+    const d = await call(`/api/trades/${tid}/${decision}`, { method: "POST", headers: { "Authorization": `Bearer ${await token(role)}` } });
     const r = d.result;
-    const ok = r.status === "override_approved" || r.status === "rejected";
-    box.innerHTML = `<p><b style="color:${ok ? "var(--ok)" : "var(--bad)"}">${esc(r.status)}</b>
-      ${esc(r.note || r.error || "")}${r.decided_by ? ` — by ${esc(r.decided_by)}` : ""}</p>
-      ${d.exchanges.map(exchange).join("")}`;
-    if (ok) document.querySelectorAll("#trade button").forEach(b => b.disabled = true);
+    const who = role === "compliance_officer" ? "compliance officer" : "portfolio manager";
+    if (r.status === "refused") {
+      box.innerHTML = `<p class="err"><b>Refused for the ${who}.</b> ${esc(r.error)}.</p>`;
+    } else {
+      box.innerHTML = `<p style="color:var(--ok)"><b>${r.status === "override_approved" ? "Override approved" : "Override rejected"}</b> by the ${who}. ${esc(r.note)}.</p>`;
+      document.querySelectorAll("#trade-actions button").forEach(b => b.disabled = true);
+    }
   } catch (e) { box.innerHTML = `<p class="err">${esc(e.message)}</p>`; }
 }
 
+function progress() {
+  const stages = ["Understanding your question", "Looking up the carbon-intensity metric in the ESG knowledge graph",
+                  "Computing each holding with the ESG system", "Computing the portfolio figure and checking the fund rules", "Writing and checking the answer"];
+  let i = 0;
+  const draw = () => $("out").innerHTML = `<div class="card"><h2>The agent is working…</h2><div class="progress">${stages.map((s, k) =>
+      `<div class="p ${k < i ? "done" : k === i ? "on" : ""}">${s}</div>`).join("")}</div></div>`;
+  draw();
+  TIMER = setInterval(() => { if (i < stages.length - 1) { i++; draw(); } }, 6000);
+}
+
 async function run() {
-  const btn = $("run"); btn.disabled = true; btn.textContent = "Agent working… (20–40 s)";
-  $("out").innerHTML = `<p class="muted">The agent is working: looking up the metric, computing each holding, then the portfolio…</p>`;
+  const btn = $("run"); btn.disabled = true; btn.textContent = "Working…";
+  progress();
   const body = { holdings: holdings(), year: $("year").value, question: $("q").value };
   if ($("cmp").value && $("cmp").value !== body.year) body.compare_year = $("cmp").value;
   try {
@@ -282,19 +360,19 @@ async function run() {
       headers: { "Content-Type": "application/json", "Authorization": `Bearer ${await token("portfolio_manager")}` },
       body: JSON.stringify(body) }));
   } catch (e) { $("out").innerHTML = `<div class="card err">${esc(e.message)}</div>`; }
-  finally { btn.disabled = false; btn.textContent = "Ask the agent"; }
+  finally { clearInterval(TIMER); btn.textContent = "Ask the agent"; total(); }
 }
 
 $("run").onclick = run;
-$("add").onclick = () => addRow(COMPANIES[0].name, 10);
-document.querySelectorAll(".presets a").forEach(a => a.onclick = () => {
-  const p = PRESETS[a.dataset.p];
-  setPortfolio(p.p); $("year").value = p.year; $("cmp").value = p.cmp; $("q").value = p.q; run();
-});
+$("add").onclick = () => addRow(COMPANIES[0].name, 0);
+$("chips").innerHTML = EXAMPLES.map((e, i) => `<button class="chip-q" onclick="useExample(${i}, false)">${esc(e.t)}</button>`).join("");
 (async () => {
-  const c = await call("/api/companies");
-  COMPANIES = c.covered.map(n => ({ name: n, covered: true })).concat(c.not_covered.map(n => ({ name: n, covered: false })));
-  setPortfolio(BASE);
+  try {
+    const c = await call("/api/companies");
+    COMPANIES = c.covered.map(n => ({ name: n, covered: true })).concat(c.not_covered.map(n => ({ name: n, covered: false })));
+  } catch (e) { COMPANIES = BASE.map(([n]) => ({ name: n, covered: true })); }
+  setFund(BASE);
+  welcome();
 })();
 </script>
 </body>
