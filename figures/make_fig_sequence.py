@@ -42,8 +42,8 @@ LANES = [
     ("L4", "Model Access\n& Inference", "Claude model access", False),
 ]
 
-FW, FH = 10.5, 7.4
-F_HEAD, F_SUB, F_MSG, F_NOTE = 9.4, 8.4, 8.4, 8.2
+FW, FH = 10.5, 7.6
+F_HEAD, F_SUB, F_MSG, F_NOTE = 11.0, 10.0, 10.2, 9.6
 
 
 def _num(v):
@@ -152,7 +152,7 @@ def draw(out_dir):
     ax.set_ylim(0, FH)
     ax.axis("off")
 
-    x0, x1 = 0.85, FW - 0.85
+    x0, x1 = 0.92, FW - 0.92
     step = (x1 - x0) / (len(LANES) - 1)
     lane_x = {rid: x0 + i * step for i, (rid, *_rest) in enumerate(LANES)}
 
@@ -161,7 +161,7 @@ def draw(out_dir):
     bottom = 0.78
     for rid, name, comp, existing in LANES:
         x = lane_x[rid]
-        w = 1.52
+        w = 1.64
         ax.add_patch(FancyBboxPatch(
             (x - w / 2, top), w, head_h,
             boxstyle="round,pad=0,rounding_size=0.06",
@@ -214,29 +214,31 @@ def draw(out_dir):
                           edgecolor="none", alpha=0.85))
         y -= gap
 
-    # legend
-    ly = 0.42
-    ax.add_patch(FancyArrowPatch((0.20, ly), (0.62, ly), arrowstyle="-|>",
-                                 mutation_scale=9, color=REQ, linewidth=1.25))
-    ax.text(0.70, ly, "request / intent", ha="left", va="center",
-            fontsize=F_NOTE, color=INK)
-    ax.add_patch(FancyArrowPatch((2.05, ly), (2.47, ly), arrowstyle="-|>",
-                                 mutation_scale=9, color=RET, linewidth=1.25,
-                                 linestyle=(0, (4, 2))))
-    ax.text(2.55, ly, "result / observation", ha="left", va="center",
-            fontsize=F_NOTE, color=INK)
-    ax.add_patch(FancyBboxPatch((4.20, ly - 0.09), 0.30, 0.18,
-                                boxstyle="round,pad=0,rounding_size=0.03",
-                                facecolor=NEW_FILL, edgecolor=NEW_EDGE,
-                                linewidth=1.1))
-    ax.text(4.58, ly, "introduced by the instantiation", ha="left",
-            va="center", fontsize=F_NOTE, color=INK)
-    ax.add_patch(FancyBboxPatch((6.70, ly - 0.09), 0.30, 0.18,
-                                boxstyle="round,pad=0,rounding_size=0.03",
-                                facecolor=OLD_FILL, edgecolor=OLD_EDGE,
-                                linewidth=1.1))
-    ax.text(7.08, ly, "provided by the existing ESG system", ha="left",
-            va="center", fontsize=F_NOTE, color=INK)
+    # legend: items placed one after another
+    ly, x = 0.42, 0.20
+
+    def item(x, draw_mark, text):
+        draw_mark(x)
+        t = ax.text(x + 0.52, ly, text, ha="left", va="center",
+                    fontsize=F_NOTE, color=INK)
+        return _right(fig, ax, t) + 0.45
+
+    x = item(x, lambda x: ax.add_patch(FancyArrowPatch(
+        (x, ly), (x + 0.42, ly), arrowstyle="-|>", mutation_scale=9,
+        color=REQ, linewidth=1.25)), "request / intent")
+    x = item(x, lambda x: ax.add_patch(FancyArrowPatch(
+        (x, ly), (x + 0.42, ly), arrowstyle="-|>", mutation_scale=9,
+        color=RET, linewidth=1.25, linestyle=(0, (4, 2)))),
+        "result / observation")
+    x = item(x, lambda x: ax.add_patch(FancyBboxPatch(
+        (x + 0.06, ly - 0.09), 0.34, 0.18,
+        boxstyle="round,pad=0,rounding_size=0.03", facecolor=NEW_FILL,
+        edgecolor=NEW_EDGE, linewidth=1.1)), "introduced by the instantiation")
+    item(x, lambda x: ax.add_patch(FancyBboxPatch(
+        (x + 0.06, ly - 0.09), 0.34, 0.18,
+        boxstyle="round,pad=0,rounding_size=0.03", facecolor=OLD_FILL,
+        edgecolor=OLD_EDGE, linewidth=1.1)), "existing ESG system")
+
     # key to the message labels
     kx, ky = 0.20, 0.10
     t = ax.text(kx, ky, "Message label:", ha="left", va="center",
@@ -255,8 +257,8 @@ def draw(out_dir):
             f"{tr['interaction_occurrences']} occurrences realizing "
             f"{len(tr['interaction_types_observed'])} of "
             f"{tr['interaction_types_defined']} interaction types. L5 and L6 "
-            "are reached through MCP; the L6 lifeline combines the existing "
-            "computation service and the added portfolio service.",
+            "are reached through MCP; L6 = existing computation + added "
+            "portfolio service.",
             ha="left", va="center", fontsize=F_NOTE, color=MUTED)
 
     os.makedirs(out_dir, exist_ok=True)
