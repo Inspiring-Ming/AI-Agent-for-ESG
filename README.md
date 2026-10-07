@@ -119,8 +119,9 @@ L4 caches the fixed prefix of every request (tool definitions and system
 prompt) and, automatically, the growing conversation of an execution, so each
 step re-reads earlier steps from the cache. Every model call reports its token
 usage (uncached input, cache writes, cache reads, output); L3 records it on the
-T3 inference result, so it appears in `output/runtime_trace.json` and in the
-page's trace. On a warm cache, a four-holding question uses about 17k input
+T3 inference result, so it appears in the page's trace and in traces written
+by the experiment scripts. (The results recorded in `output/` were produced
+before usage reporting was added and do not contain it.) On a warm cache, a four-holding question uses about 17k input
 tokens, of which about 14k are read from the cache.
 
 ## Configuration
