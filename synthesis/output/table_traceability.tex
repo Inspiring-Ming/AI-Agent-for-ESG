@@ -1,0 +1,25 @@
+\begin{table*}[t]
+\centering
+\caption{Traceability from the normalized capability set to responsibilities and case-system realization.
+NC = normalized capabilities assigned to the responsibility; Src = distinct evidence sources contributing
+to them; Cond = condition-dependent capabilities among them.}
+\label{tab:evaluation-traceability}
+\small
+\begin{tabular}{p{0.115\textwidth} c c c p{0.315\textwidth} p{0.235\textwidth}}
+\hline
+\textbf{Responsibility} & \textbf{NC} & \textbf{Src} & \textbf{Cond} &
+\textbf{Representative normalized capabilities} & \textbf{Case realization} \\
+\hline
+L0 -- Decide & 4 & 4 & 0 & Business objectives and success criteria; Governance risk ownership and lifecycle control; Architectural requirements and constraints & Design-time concern; not in runtime trace \\
+L1 -- Interact & 2 & 3 & 0 & Client request and response handling; Multi-channel interaction surface & Analyst interface \\
+L2 -- Protect & 6 & 4 & 1 & Principal authentication; System-level authorization and entitlement propagation; Inbound and outbound safety control & Outside selected runtime scope \\
+L3 -- Coordinate & 6 & 8 & 2 & Task decomposition and planning; Execution coordination and workflow routing; Working context and execution state & Agent runtime / orchestrator \\
+L4 -- Infer & 3 & 4 & 0 & Unified model access and invocation; Model selection and routing policy; Inference output contract validation & Model access for interpretation and explanation \\
+L5 -- Ground & 5 & 7 & 1 & Enterprise information sources and stores; Retrieval and context assembly; Persistent and retrievable memory & ESG knowledge graph and structured data \\
+L6 -- Act & 7 & 6 & 2 & Tool and skill invocation; Tool discovery registry and metadata; Action and result validation & Metric-computation services \\
+L7 -- Decouple & 3 & 5 & 3 & Task queues and decoupled invocation; Long-running and background execution; Event streaming and subscription & Not required by selected scenario \\
+L8 -- Operate & 4 & 3 & 1 & Runtime compute and deployment environment; Scaling networking and storage; Resilience and recovery & Case deployment infrastructure \\
+L9 -- Improve & 4 & 6 & 0 & Telemetry traces logs and metrics; Offline evaluation and regression testing; Online quality cost and performance monitoring & Not exercised in selected runtime trace \\
+\hline
+\end{tabular}
+\end{table*}

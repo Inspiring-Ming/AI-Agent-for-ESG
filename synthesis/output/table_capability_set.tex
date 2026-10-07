@@ -1,0 +1,56 @@
+\begin{table}[t]
+\centering
+\caption{Normalized capability set with evidence provenance.}
+\label{tab:capability-set}
+\scriptsize
+\begin{tabular}{p{0.05\textwidth} p{0.36\textwidth} p{0.04\textwidth} p{0.13\textwidth} p{0.20\textwidth}}
+\hline
+\textbf{ID} & \textbf{Normalized capability} & \textbf{R} & \textbf{Applicability} & \textbf{Sources} \\
+\hline
+NC01 & Business objectives and success criteria & L0 & general & S04 \\
+NC02 & Governance risk ownership and lifecycle control & L0 & general & S04, S06 \\
+NC03 & Architectural requirements and constraints & L0 & general & S05, S08 \\
+NC04 & Delivery and adoption planning & L0 & general & S04 \\
+NC05 & Client request and response handling & L1 & general & S04, S06 \\
+NC06 & Multi-channel interaction surface & L1 & general & S07 \\
+NC07 & Principal authentication & L2 & general & S06, S07 \\
+NC08 & System-level authorization and entitlement propagation & L2 & multi-tenant & S09 \\
+NC09 & Inbound and outbound safety control & L2 & general & S03, S06 \\
+NC10 & Ingress traffic and abuse control & L2 & general & S06 \\
+NC11 & Input data protection and egress control & L2 & general & S06 \\
+NC12 & Security audit logging & L2 & general & S06 \\
+NC13 & Task decomposition and planning & L3 & general & S01, S02 \\
+NC14 & Execution coordination and workflow routing & L3 & general & S04, S06, S07 \\
+NC15 & Working context and execution state & L3 & general & S01, S02, S07 \\
+NC16 & Bounded and iterative execution control & L3 & general & S05 \\
+NC17 & Agent discovery and collaboration & L3 & multi-agent & S01, S04, S07, S08, S11 \\
+NC18 & Human review and intervention & L3 & governance & S06 \\
+NC19 & Unified model access and invocation & L4 & general & S06, S07 \\
+NC20 & Model selection and routing policy & L4 & general & S06, S08 \\
+NC21 & Inference output contract validation & L4 & general & S05 \\
+NC22 & Enterprise information sources and stores & L5 & general & S04, S06, S07 \\
+NC23 & Retrieval and context assembly & L5 & general & S01, S06, S10 \\
+NC24 & Persistent and retrievable memory & L5 & persistent-memory & S03 \\
+NC25 & Knowledge provenance and lineage & L5 & general & S05 \\
+NC26 & Data governance and access constraints & L5 & general & S06 \\
+NC27 & Tool and skill invocation & L6 & general & S01, S02, S06 \\
+NC28 & Tool discovery registry and metadata & L6 & general & S06, S07, S10 \\
+NC29 & Action and result validation & L6 & general & S05 \\
+NC30 & Resource-specific authorization and credentials & L6 & general & S02, S06 \\
+NC31 & Approval gate for consequential actions & L6 & governance & S06 \\
+NC32 & Execution isolation and sandboxing & L6 & risk-tier & S06 \\
+NC33 & Action audit and provenance & L6 & general & S05 \\
+NC34 & Task queues and decoupled invocation & L7 & async & S07 \\
+NC35 & Long-running and background execution & L7 & async & S08, S11 \\
+NC36 & Event streaming and subscription & L7 & async & S03, S06 \\
+NC37 & Runtime compute and deployment environment & L8 & general & S06, S08 \\
+NC38 & Scaling networking and storage & L8 & general & S09 \\
+NC39 & Resilience and recovery & L8 & general & S08 \\
+NC40 & Infrastructure configuration and release & L8 & multi-tenant & S09 \\
+NC41 & Telemetry traces logs and metrics & L9 & general & S06, S07 \\
+NC42 & Offline evaluation and regression testing & L9 & general & S02, S03 \\
+NC43 & Online quality cost and performance monitoring & L9 & general & S08 \\
+NC44 & Failure analysis and improvement feedback & L9 & general & S05, S06 \\
+\hline
+\end{tabular}
+\end{table}

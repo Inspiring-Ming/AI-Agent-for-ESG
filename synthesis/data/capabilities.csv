@@ -1,0 +1,78 @@
+raw_id,source_id,raw_term,normalized_id,normalized_capability,responsibility,applicability,mechanism_examples
+R001,S04,Business Alignment,NC01,Business objectives and success criteria,L0,general,
+R002,S04,Governance Integration,NC02,Governance risk ownership and lifecycle control,L0,general,
+R003,S06,Governance and operating model,NC02,Governance risk ownership and lifecycle control,L0,general,
+R004,S08,Workload-driven architecture choice,NC03,Architectural requirements and constraints,L0,general,
+R005,S05,Lifecycle-aware assistance scope,NC03,Architectural requirements and constraints,L0,general,
+R006,S04,Enterprise System Integration,NC04,Delivery and adoption planning,L0,general,
+R007,S06,User and application entry points,NC05,Client request and response handling,L1,general,
+R008,S07,Client channels,NC06,Multi-channel interaction surface,L1,general,
+R009,S04,Enterprise user interaction,NC05,Client request and response handling,L1,general,
+R010,S06,Identity and access management,NC07,Principal authentication,L2,general,
+R011,S07,Agent identity,NC07,Principal authentication,L2,general,
+R012,S09,Tenant isolation,NC08,System-level authorization and entitlement propagation,L2,conditional:multi-tenant
+R013,S06,Guardrails,NC09,Inbound and outbound safety control,L2,general,
+R014,S03,Trust and safety,NC09,Inbound and outbound safety control,L2,general,
+R015,S06,Ingress and traffic control,NC10,Ingress traffic and abuse control,L2,general,
+R016,S06,Data protection,NC11,Input data protection and egress control,L2,general,
+R017,S06,Security audit logging,NC12,Security audit logging,L2,general,
+R018,S01,Planning,NC13,Task decomposition and planning,L3,general,
+R019,S02,Planning and reflection,NC13,Task decomposition and planning,L3,general,
+R020,S04,Workflow Orchestration,NC14,Execution coordination and workflow routing,L3,general,
+R021,S07,Orchestration,NC14,Execution coordination and workflow routing,L3,general,
+R022,S06,Agent orchestration,NC14,Execution coordination and workflow routing,L3,general,
+R023,S01,Contextual memory,NC15,Working context and execution state,L3,general,
+R024,S07,Persistent context and state,NC15,Working context and execution state,L3,general,
+R025,S02,State and memory management,NC15,Working context and execution state,L3,general,
+R026,S05,Context refinement loop,NC16,Bounded and iterative execution control,L3,general,
+R027,S05,Bounded tool use,NC16,Bounded and iterative execution control,L3,general,
+R028,S07,Agent discovery,NC17,Agent discovery and collaboration,L3,conditional:multi-agent,A2A
+R029,S11,Agent discovery and delegation,NC17,Agent discovery and collaboration,L3,conditional:multi-agent,A2A
+R030,S04,Agent Collaboration,NC17,Agent discovery and collaboration,L3,conditional:multi-agent,A2A
+R031,S08,Multi-agent pattern,NC17,Agent discovery and collaboration,L3,conditional:multi-agent,A2A
+R032,S01,Coordination of actions,NC17,Agent discovery and collaboration,L3,conditional:multi-agent,
+R033,S06,Human in the loop,NC18,Human review and intervention,L3,conditional:governance,
+R034,S06,Model access,NC19,Unified model access and invocation,L4,general,model gateway
+R035,S07,Model access,NC19,Unified model access and invocation,L4,general,model gateway
+R036,S08,Model selection,NC20,Model selection and routing policy,L4,general,model gateway
+R037,S06,Model gateway,NC20,Model selection and routing policy,L4,conditional:centralized-control,model gateway
+R038,S08,Cost and latency trade-offs,NC20,Model selection and routing policy,L4,general,
+R039,S05,Output validation,NC21,Inference output contract validation,L4,general,
+R040,S04,Organizational Knowledge,NC22,Enterprise information sources and stores,L5,general,
+R041,S06,Knowledge bases,NC22,Enterprise information sources and stores,L5,general,
+R042,S07,Knowledge access,NC22,Enterprise information sources and stores,L5,general,
+R043,S06,Retrieval augmented generation,NC23,Retrieval and context assembly,L5,general,RAG / vector search
+R044,S10,Contextual resources,NC23,Retrieval and context assembly,L5,general,MCP
+R045,S01,Environmental interaction,NC23,Retrieval and context assembly,L5,general,
+R046,S03,Memory and cognition,NC24,Persistent and retrievable memory,L5,conditional:persistent-memory,
+R047,S05,Provenance artifacts,NC25,Knowledge provenance and lineage,L5,general,
+R048,S06,Data governance,NC26,Data governance and access constraints,L5,general,
+R049,S01,Tool use,NC27,Tool and skill invocation,L6,general,MCP / REST / gRPC
+R050,S02,Action and tool use,NC27,Tool and skill invocation,L6,general,MCP / REST / gRPC
+R051,S06,Tool execution,NC27,Tool and skill invocation,L6,general,MCP / REST / gRPC
+R052,S10,Tool discovery and access,NC28,Tool discovery registry and metadata,L6,general,MCP
+R053,S07,External tools,NC28,Tool discovery registry and metadata,L6,general,MCP
+R054,S06,Discoverability,NC28,Tool discovery registry and metadata,L6,general,MCP
+R055,S05,Validation of assistance output,NC29,Action and result validation,L6,general,
+R056,S06,Tool security,NC30,Resource-specific authorization and credentials,L6,general,
+R057,S02,Tool security,NC30,Resource-specific authorization and credentials,L6,general,
+R058,S06,Approval for consequential actions,NC31,Approval gate for consequential actions,L6,conditional:governance,
+R059,S06,Sandboxed execution,NC32,Execution isolation and sandboxing,L6,conditional:risk-tier,
+R060,S05,Audit artifacts,NC33,Action audit and provenance,L6,general,
+R061,S07,Asynchronous messaging,NC34,Task queues and decoupled invocation,L7,conditional:async,message broker
+R062,S08,Long-running tasks,NC35,Long-running and background execution,L7,conditional:async,
+R063,S11,Task coordination,NC35,Long-running and background execution,L7,conditional:async,A2A
+R064,S06,Event-driven integration,NC36,Event streaming and subscription,L7,conditional:async,event streaming
+R065,S03,Networking systems,NC36,Event streaming and subscription,L7,conditional:async,
+R066,S08,Deployment configuration,NC37,Runtime compute and deployment environment,L8,general,containers / serverless
+R067,S06,Runtime infrastructure,NC37,Runtime compute and deployment environment,L8,general,containers / serverless
+R068,S09,Shared platform services,NC38,Scaling networking and storage,L8,general,
+R069,S08,Scalability and resilience,NC39,Resilience and recovery,L8,general,
+R070,S09,Multi-tenant platform operation,NC40,Infrastructure configuration and release,L8,conditional:multi-tenant,IaC / CI-CD
+R071,S06,Observability,NC41,Telemetry traces logs and metrics,L9,general,OpenTelemetry
+R072,S07,Observability,NC41,Telemetry traces logs and metrics,L9,general,OpenTelemetry
+R073,S03,Evaluation,NC42,Offline evaluation and regression testing,L9,general,
+R074,S02,Evaluation,NC42,Offline evaluation and regression testing,L9,general,
+R075,S08,Monitoring cost and performance,NC43,Online quality cost and performance monitoring,L9,general,
+R076,S06,Operational analysis,NC44,Failure analysis and improvement feedback,L9,general,
+R077,S05,Audit and feedback loop,NC44,Failure analysis and improvement feedback,L9,general,

@@ -1,0 +1,12 @@
+source_id,bibkey,short_name,category,scope,year,retained,notes
+S01,abouali2025agentic,Abou Ali et al.,research,general agentic-system architecture,2025,yes,Survey of agentic AI architectures; planning/memory/tool use/coordination
+S02,peykani2026holistic,Peykani et al.,research,general agentic-system architecture,2026,yes,Memory/planning-reflection/action-tool use; supporting infrastructure
+S03,moralles2026slr,Moralles et al.,research,general agentic-system architecture,2026,yes,SLR research areas: memory+cognition/networking/trust+safety/evaluation/applications
+S04,koo2026enterprise,Koo and Chung,research,enterprise agentic-AI architecture,2026,yes,Six enterprise capabilities incl. business alignment and governance integration
+S05,elsisi2026devcoach,Elsisi et al.,research,domain-specific reference architecture,2026,yes,DevCoach: context refinement loops/bounded tool use/validation/provenance/audit
+S06,aws2026agentic,AWS,industry,runtime-oriented enterprise architecture,2026,yes,Agents vs services for model/tool/knowledge; security+observability+discoverability
+S07,microsoft2026multiagent,Microsoft,industry,multi-agent reference architecture,2026,yes,Orchestration/agent discovery/persistent state/knowledge/tools/security/observability
+S08,google2026components,Google Cloud,industry,deployment-oriented architecture guidance,2026,yes,Agentic component choices; single- vs multi-agent patterns by workload
+S09,google2026multitenant,Google Cloud,industry,multi-tenant system architecture,2026,yes,Tenant isolation/shared platform services for agentic workloads
+S10,mcp2026spec,MCP,specification,tool and context interoperability,2026,yes,Standardized discovery/access to externally exposed tools and contextual resources
+S11,a2a2026spec,A2A,specification,inter-agent interoperability,2026,yes,Agent discovery/communication/delegation/task coordination

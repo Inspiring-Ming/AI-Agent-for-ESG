@@ -133,6 +133,16 @@ tokens, of which about 14k are read from the cache.
 | `SESSION_SECRET` | signing key for L2 session tokens |
 | `ESG_REPO` | path to the ESG Metric System checkout |
 
+## Synthesis evidence
+
+`synthesis/` holds the evidence base of the reference architecture (Section III
+of the paper): `data/sources.csv` lists the 11 retained sources, and
+`data/capabilities.csv` maps each of the 77 extracted items to one of 44
+normalized capabilities and its responsibility (L0–L9). `scripts/analyze.py`
+recomputes the counts reported in the paper and writes the traceability tables
+to `synthesis/output/`. These 11 sources are the synthesis evidence; other
+references in the paper are background or case citations.
+
 ## Experiments
 
 | Script | What it measures |
@@ -204,4 +214,5 @@ service/              FastAPI service (L1)
 ui/                   portfolio analyst page
 output/               recorded results (JSON)
 figures/              recorded-execution figure and its generator
+synthesis/            evidence base: sources, extracted items, normalized capabilities
 ```

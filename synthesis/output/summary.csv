@@ -1,0 +1,11 @@
+responsibility,verb,normalized_capabilities,raw_capabilities,distinct_sources,conditional
+L0,Decide,4,6,4,0
+L1,Interact,2,3,3,0
+L2,Protect,6,8,4,1
+L3,Coordinate,6,16,8,2
+L4,Infer,3,6,4,0
+L5,Ground,5,9,7,1
+L6,Act,7,12,6,2
+L7,Decouple,3,5,5,3
+L8,Operate,4,5,3,1
+L9,Improve,4,7,6,0
