@@ -42,7 +42,7 @@ LANES = [
     ("L3", "Agent & Workflow\nOrchestration", "agent runtime", False),
     ("L5", "Enterprise Context\n& Knowledge", "ESG knowledge graph*", True),
     ("L6", "Tool & Action\nRuntime", "computation* · portfolio", "mixed"),
-    ("L4", "Model Access\n& Inference", "Claude model access", False),
+    ("L4", "Model Access\n& Inference", "hosted language model", False),
 ]
 
 FW, FH = 10.5, 7.6
@@ -228,7 +228,7 @@ def draw(out_dir):
         color=RET, linewidth=1.25, linestyle=(0, (4, 2)))),
         "result / observation")
     ax.text(x, ly, "* existing ESG system; all other components were "
-            "introduced by the instantiation", ha="left", va="center",
+            "added for the agent", ha="left", va="center",
             fontsize=F_NOTE, color=INK)
 
     # key to the message labels
