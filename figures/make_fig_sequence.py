@@ -231,10 +231,6 @@ def draw(out_dir):
             "added for the agent", ha="left", va="center",
             fontsize=F_NOTE, color=INK)
 
-    ax.text(0.20, 0.12,
-            "L5 and L6 are reached through MCP; L6 comprises the existing "
-            "computation service and the added portfolio service.",
-            ha="left", va="center", fontsize=F_NOTE, color=MUTED)
 
     os.makedirs(out_dir, exist_ok=True)
     for ext in ("pdf", "svg", "png"):
