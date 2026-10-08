@@ -231,19 +231,22 @@ def draw(out_dir):
             "added for the agent", ha="left", va="center",
             fontsize=F_NOTE, color=INK)
 
-    # key to the message labels
+    # key to the message labels, read left to right
     kx, ky = 0.20, 0.10
-    t = ax.text(kx, ky, "Label:", ha="left", va="center",
+    t = ax.text(kx, ky, "How to read a message:", ha="left", va="center",
                 fontsize=F_NOTE, color=INK, fontweight="bold")
-    t = ax.text(_right(fig, ax, t) + 0.10, ky, "13–20", ha="left",
+    t = ax.text(_right(fig, ax, t) + 0.14, ky, "13–20", ha="left",
                 va="center", fontsize=F_NOTE - 0.6, color=MUTED)
-    t = ax.text(_right(fig, ax, t) + 0.10, ky, "T5", ha="left", va="center",
+    t = ax.text(_right(fig, ax, t) + 0.06, ky, "= occurrence number(s);",
+                ha="left", va="center", fontsize=F_NOTE, color=INK)
+    t = ax.text(_right(fig, ax, t) + 0.14, ky, "T5", ha="left", va="center",
                 fontsize=F_NOTE - 0.8, fontweight="bold", color="white",
                 bbox=dict(boxstyle="round,pad=0.18,rounding_size=0.08",
                           facecolor=TAG, edgecolor="none"))
-    ax.text(_right(fig, ax, t) + 0.12, ky,
-            "occurrence number, interaction type (Table I), content",
-            ha="left", va="center", fontsize=F_NOTE, color=INK)
+    t = ax.text(_right(fig, ax, t) + 0.10, ky,
+                "= interaction type (Table I);  then the content exchanged",
+                ha="left", va="center", fontsize=F_NOTE, color=INK)
+
     ax.text(0.20, -0.14,
             "L5 and L6 are reached through MCP; L6 comprises the existing "
             "computation service and the added portfolio service.",
