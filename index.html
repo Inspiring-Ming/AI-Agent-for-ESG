@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ESG Portfolio Agent: Carbon Analysis and Pre-Trade Compliance</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+            min-height: 100vh;
+            padding: 40px 20px;
+            color: #2d3748;
+        }
+
+        .container {
+            background: rgba(255, 255, 255, 0.96);
+            border-radius: 20px;
+            padding: 50px;
+            max-width: 980px;
+            margin: 0 auto;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+        }
+
+        .hero { text-align: center; }
+
+        .logo {
+            font-size: 3rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 10px;
+            animation: fadeInUp 0.8s ease-out;
+        }
+
+        .subtitle {
+            font-size: 1.2rem;
+            color: #4a5568;
+            margin-bottom: 18px;
+            animation: fadeInUp 0.8s ease-out 0.1s both;
+        }
+
+        .tags { margin-bottom: 28px; animation: fadeInUp 0.8s ease-out 0.2s both; }
+        .tag {
+            display: inline-block;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 6px 16px;
+            border-radius: 25px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            margin: 3px;
+        }
+
+        .description {
+            color: #4a5568;
+            line-height: 1.8;
+            margin: 0 auto 30px;
+            max-width: 780px;
+            font-size: 1.05rem;
+            animation: fadeInUp 0.8s ease-out 0.3s both;
+        }
+
+        .links {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            margin-bottom: 45px;
+            flex-wrap: wrap;
+            animation: fadeInUp 0.8s ease-out 0.4s both;
+        }
+
+        .link-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 12px 28px;
+            border-radius: 10px;
+            text-decoration: none;
+            font-weight: 600;
+            font-size: 1rem;
+            transition: all 0.3s ease;
+        }
+        .link-btn.primary { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; }
+        .link-btn.secondary { background: #f7fafc; color: #4a5568; border: 2px solid #e2e8f0; }
+        .link-btn:hover { transform: translateY(-3px); box-shadow: 0 10px 20px rgba(0, 0, 0, 0.15); }
+        .link-btn svg { width: 20px; height: 20px; }
+
+        h2 {
+            font-size: 1.4rem;
+            color: #2d3748;
+            margin: 45px 0 16px;
+            padding-bottom: 8px;
+            border-bottom: 2px solid #edf2f7;
+        }
+
+        p.body { color: #4a5568; line-height: 1.75; margin-bottom: 14px; }
+
+        .features {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+            gap: 18px;
+        }
+        .feature { background: #f7fafc; padding: 20px; border-radius: 12px; }
+        .feature h3 { color: #2d3748; font-size: 1rem; margin-bottom: 8px; }
+        .feature p { color: #718096; font-size: 0.92rem; line-height: 1.55; }
+
+        .question {
+            background: #f7fafc;
+            border-left: 4px solid #667eea;
+            padding: 14px 18px;
+            border-radius: 6px;
+            color: #2d3748;
+            font-style: italic;
+            margin-bottom: 10px;
+        }
+
+        figure { margin: 10px 0 6px; }
+        figure img { width: 100%; border-radius: 10px; border: 1px solid #e2e8f0; }
+        figcaption { color: #718096; font-size: 0.88rem; margin-top: 8px; line-height: 1.5; }
+
+        table { width: 100%; border-collapse: collapse; font-size: 0.92rem; margin: 6px 0 10px; }
+        th, td { padding: 10px 12px; text-align: left; border-bottom: 1px solid #edf2f7; }
+        th { background: #f7fafc; color: #2d3748; font-weight: 600; }
+        td { color: #4a5568; }
+        td.num { text-align: right; font-variant-numeric: tabular-nums; }
+        .ok { color: #2f855a; font-weight: 600; }
+        .hold { color: #b7791f; font-weight: 600; }
+
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+            gap: 14px;
+            margin: 6px 0 10px;
+        }
+        .stat { background: #f7fafc; border-radius: 12px; padding: 18px; text-align: center; }
+        .stat .n {
+            font-size: 1.8rem; font-weight: 700;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+        }
+        .stat .l { color: #718096; font-size: 0.85rem; margin-top: 4px; }
+
+        .code {
+            background: #1a202c;
+            color: #e2e8f0;
+            border-radius: 10px;
+            padding: 20px;
+            font-family: 'Monaco', 'Menlo', monospace;
+            font-size: 0.85rem;
+            line-height: 1.7;
+            overflow-x: auto;
+            white-space: pre;
+        }
+        .code .c { color: #a0aec0; }
+
+        .footer { text-align: center; color: #a0aec0; font-size: 0.85rem; margin-top: 40px; }
+
+        @keyframes fadeInUp {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        @media (max-width: 600px) {
+            .container { padding: 30px 20px; }
+            .logo { font-size: 2.2rem; }
+            .links { flex-direction: column; }
+            .link-btn { width: 100%; justify-content: center; }
+            table { font-size: 0.8rem; }
+            th, td { padding: 8px 6px; }
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+
+    <div class="hero">
+        <h1 class="logo">ESG Portfolio Agent</h1>
+        <p class="subtitle">Portfolio carbon analysis and pre-trade ESG compliance, built on an existing enterprise system</p>
+        <div class="tags">
+            <span class="tag">Claude tool use</span>
+            <span class="tag">MCP</span>
+            <span class="tag">FastAPI</span>
+            <span class="tag">Docker Compose</span>
+            <span class="tag">Reference architecture</span>
+        </div>
+
+        <p class="description">
+            A portfolio manager asks a question in plain language. A language model chooses each next step;
+            deterministic services retrieve definitions, compute every number, and check trades against the
+            fund's ESG mandate. The model never calculates a figure and never executes an action itself, and a
+            trade that breaches the mandate waits for a second person to approve.
+        </p>
+
+        <div class="links">
+            <a href="https://github.com/Inspiring-Ming/AI-Agent-for-ESG" class="link-btn primary">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/>
+                </svg>
+                GitHub
+            </a>
+            <a href="#run" class="link-btn secondary">See a recorded run</a>
+        </div>
+    </div>
+
+    <h2>The problem</h2>
+    <p class="body">
+        Asset managers report their funds' carbon footprint under TCFD and SFDR. Answering even a simple question,
+        such as how carbon-intensive a portfolio is and which holdings drive it, means finding the right metric,
+        computing it company by company, handling missing data, and aggregating the result. Checking whether a
+        proposed trade still fits the fund's ESG mandate adds a compliance step on top.
+    </p>
+    <p class="body">
+        An LLM can drive this conversation, but it should not be trusted to calculate figures or to approve
+        trades. This project shows how to give the model the planning role while existing enterprise services
+        keep authority over data, computation, and consequential actions.
+    </p>
+    <div class="question">"What is the carbon intensity of my portfolio in 2023, and which holdings drive it?"</div>
+    <div class="question">"Buy 5 points more NXP, funded from Infineon. Does it comply with the mandate? If so, submit it."</div>
+
+    <h2>What I built</h2>
+    <div class="features">
+        <div class="feature">
+            <h3>Model-driven tool-use loop</h3>
+            <p>Claude chooses the next capability through strict tool definitions. An output contract rejects
+               refusals and truncated responses, and a hard cap bounds model calls per request.</p>
+        </div>
+        <div class="feature">
+            <h3>Three MCP servers</h3>
+            <p>The existing ESG knowledge graph, the metric computation service, and a new portfolio and
+               compliance service are exposed over the Model Context Protocol, so the agent integrates the
+               existing system instead of reimplementing it.</p>
+        </div>
+        <div class="feature">
+            <h3>Enterprise controls in code</h3>
+            <p>Signed sessions, role-based entitlements, rate limits and egress checks at the boundary;
+               authorization at every service call; a four-eyes gate that holds breaching trades until a
+               compliance officer who is not the submitter approves.</p>
+        </div>
+        <div class="feature">
+            <h3>Number check</h3>
+            <p>Every figure in an answer must appear in the request or in a service result. Drafts that contain a
+               model-derived number are returned once for revision; all 21 recorded answers passed.</p>
+        </div>
+        <div class="feature">
+            <h3>Cost-aware inference</h3>
+            <p>Prompt caching of tool definitions, system prompt and conversation prefix serves about 14k of 17k
+               input tokens per question from cache; every model call reports its token usage on the trace.</p>
+        </div>
+        <div class="feature">
+            <h3>Evaluation harness</h3>
+            <p>Every exchange between components is recorded as a typed interaction. Scripts replay seven
+               question types three times each and run probes that deliberately try to break the rules.</p>
+        </div>
+    </div>
+
+    <h2>Architecture</h2>
+    <p class="body">
+        The design follows a technology-neutral reference architecture for enterprise agentic AI with ten
+        responsibilities (L0&ndash;L9). The agent realizes seven of them: the client page (L1), the access gate (L2),
+        the agent runtime (L3), model access (L4), the knowledge graph (L5), the computation and compliance
+        services (L6), and the container deployment (L8).
+    </p>
+    <figure>
+        <img src="img/architecture.png" alt="Reference architecture with ten responsibilities L0 to L9 and typed interactions T1 to T8">
+        <figcaption>Reference architecture. Each box is a responsibility; arrows are typed interactions. Guardrails sit
+        where the checked decision is owned, not in a separate layer.</figcaption>
+    </figure>
+
+    <h2 id="run">A recorded run</h2>
+    <p class="body">
+        A portfolio manager holds STMicroelectronics (30%), Infineon (25%), Micron (25%) and TSMC (20%) and asks for
+        the 2023 carbon intensity. The agent looks up the metric definition in the knowledge graph, has the
+        computation service calculate each holding, and has the portfolio service compute the weighted average
+        carbon intensity (WACI). TSMC has no revenue data, so it is excluded and the gap is reported rather than
+        estimated.
+    </p>
+    <div class="stats">
+        <div class="stat"><div class="n">163.59</div><div class="l">WACI, t CO&#8322;e per USD m</div></div>
+        <div class="stat"><div class="n">84%</div><div class="l">of it driven by Micron</div></div>
+        <div class="stat"><div class="n">27</div><div class="l">recorded exchanges</div></div>
+        <div class="stat"><div class="n">0</div><div class="l">numbers invented by the model</div></div>
+    </div>
+    <figure>
+        <img src="img/recorded-run.png" alt="Sequence diagram of the recorded execution with 27 numbered messages">
+        <figcaption>Every message between components, as recorded. Blue: requests; green dashed: results. The model
+        (right) only decides the next step; the services return every number in the final answer.</figcaption>
+    </figure>
+
+    <h2>Results across seven questions</h2>
+    <p class="body">Each question was run three times, because the model's choices are not deterministic.</p>
+    <table>
+        <tr><th>Question</th><th class="num">Exchanges</th><th class="num">Service calls</th><th>Outcome</th></tr>
+        <tr><td>Intensity and drivers, 4 holdings</td><td class="num">27</td><td class="num">5</td><td class="ok">Answered</td></tr>
+        <tr><td>Change since 2022</td><td class="num">39&ndash;41</td><td class="num">10</td><td class="ok">Answered</td></tr>
+        <tr><td>One holding without revenue data</td><td class="num">27</td><td class="num">5</td><td class="ok">Answered, gap reported</td></tr>
+        <tr><td>Intensity and drivers, 7 holdings</td><td class="num">35</td><td class="num">8</td><td class="ok">Answered</td></tr>
+        <tr><td>Trade within the mandate; submit</td><td class="num">31&ndash;33</td><td class="num">6&ndash;7</td><td class="ok">Cleared</td></tr>
+        <tr><td>Trade breaching the mandate; override</td><td class="num">33</td><td class="num">7</td><td class="hold">Held for approval</td></tr>
+        <tr><td>Share prices (not in the data)</td><td class="num">5</td><td class="num">0</td><td class="ok">Declined</td></tr>
+    </table>
+
+    <h2>Trying to break it</h2>
+    <p class="body">
+        I wrote probes that would succeed only if a control were missing. None did.
+    </p>
+    <table>
+        <tr><th>Probe</th><th>Result</th></tr>
+        <tr><td>Request with a forged session token</td><td class="ok">Refused at the boundary</td></tr>
+        <tr><td>User without the computation entitlement calls the service</td><td class="ok">Refused by the service</td></tr>
+        <tr><td>Portfolio manager (no override right) approves a breaching trade</td><td class="ok">Refused</td></tr>
+        <tr><td>Submitter who also holds the override right approves</td><td class="ok">Refused (four-eyes rule)</td></tr>
+        <tr><td>Compliance officer approves</td><td class="ok">Approved</td></tr>
+        <tr><td>Reported figures compared with service results</td><td class="ok">Identical</td></tr>
+    </table>
+
+    <h2>Run it</h2>
+    <div class="code"><span class="c"># the agent sits on top of an existing ESG metric system</span>
+git clone https://github.com/Inspiring-Ming/AI-Agent-for-ESG
+cd AI-Agent-for-ESG
+git clone https://github.com/Inspiring-Ming/ESG-Metric-System ../esg-system
+export ESG_REPO=../esg-system   <span class="c"># path to the existing ESG system</span>
+cp .env.example .env            <span class="c"># add your ANTHROPIC_API_KEY</span>
+docker compose up -d --build    <span class="c"># ESG system, three MCP servers, agent service</span>
+open http://localhost:8090      <span class="c"># ask questions, watch each step, approve overrides</span>
+./evaluate.sh                   <span class="c"># reproduce the recorded results</span></div>
+
+    <p class="footer">
+        Python &middot; Anthropic API &middot; Model Context Protocol &middot; FastAPI &middot; Docker Compose
+    </p>
+</div>
+</body>
+</html>
