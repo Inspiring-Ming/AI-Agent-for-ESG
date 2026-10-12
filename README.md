@@ -1,21 +1,68 @@
-# ESG Portfolio Agent — Reference Architecture Instantiation
+# ESG Portfolio Agent
 
-Replication package for the architecture instantiation and evaluation reported
-in *A Reference Architecture for Enterprise Agentic AI Integration*
-(responsibilities L0–L9, interaction types T1–T8, boundary invariants I1–I4).
+**An LLM agent that answers portfolio carbon-intensity questions and runs
+pre-trade ESG compliance checks on top of an existing enterprise system,
+built as a reference-architecture instantiation.**
+
+![Python](https://img.shields.io/badge/Python-3.12-3776AB?logo=python&logoColor=white)
+![FastAPI](https://img.shields.io/badge/FastAPI-service-009688?logo=fastapi&logoColor=white)
+![Claude](https://img.shields.io/badge/Claude-tool--use%20loop-D97757)
+![MCP](https://img.shields.io/badge/MCP-3%20servers-444)
+![Docker Compose](https://img.shields.io/badge/Docker%20Compose-5%20services-2496ED?logo=docker&logoColor=white)
+
+A portfolio manager asks, in plain language, *"What is the carbon intensity of
+my portfolio, and which holdings drive it?"* or *"Buy 5 points more NXP,
+funded from Infineon — does it comply with the mandate? If so, submit it."*
+A language model (Claude) chooses each step; deterministic services do the
+work; a compliance service and a four-eyes approval gate decide whether a
+trade goes through. The model never computes a number and never executes an
+action itself.
+
+The design follows a technology-neutral reference architecture for enterprise
+agentic AI (responsibilities L0–L9, interaction types T1–T8, boundary
+invariants I1–I4), and this repository is the replication package for its
+instantiation and evaluation, reported in *A Reference Architecture for
+Enterprise Agentic AI Integration*.
+
+![Reference architecture](figures/reference-architecture.png)
+
+## Highlights
+
+- **Model-driven tool-use loop (L3/L4)** — Claude selects the next capability
+  through strict tool definitions; an output contract rejects refusals and
+  truncated responses; a bound caps model calls per request.
+- **Three MCP servers (L5/L6)** — the existing ESG knowledge graph, the metric
+  computation service, and a new portfolio/compliance service are exposed over
+  the Model Context Protocol (streamable HTTP), so the agent integrates the
+  legacy system without reimplementing it.
+- **Enterprise controls as conventional software (L2/L6)** — signed sessions,
+  role-based entitlements, request validation, rate limiting and egress checks
+  at the boundary; resource-level authorization at every service call; a
+  **four-eyes approval gate** that holds mandate-breaching trades until a
+  compliance officer who is not the submitter approves.
+- **Number check** — every figure in an answer must appear in the request or
+  in a service result, which removes model-derived numbers; drafts that fail
+  are sent back once for revision (4 of 21 recorded runs).
+- **Cost-aware inference** — prompt caching of tool definitions, system prompt
+  and conversation prefix (about 14k of 17k input tokens served from cache),
+  server-side model fallback, and per-call token-usage reporting on the trace.
+- **Evaluation harness** — every exchange between responsibilities is recorded
+  as a typed interaction occurrence; scripts replay a worked example, seven
+  question types with repeats, and eight probes that try to violate the
+  boundary invariants (forged tokens, wrong-role approvals, model-supplied
+  inputs). All recorded results are in `output/`.
+
+![Recorded execution](figures/case-runtime.png)
+
+*Recorded execution of one portfolio question: 27 typed exchanges across six
+responsibilities; every number in the answer traces to a service result.*
 
 ## What the agent does
 
 Portfolio managers and sustainability analysts at asset managers must report
 the carbon footprint of their funds (TCFD, SFDR). The agent answers their
-questions about a portfolio in plain language, for example:
-
-- *What is the carbon intensity of my portfolio, and which holdings drive it?*
-- *Has it improved since 2022?*
-- *I want to buy 5 points more NXP, funded from Infineon. Does it comply with
-  the fund's mandate? If so, submit it.*
-
-A language model (Claude) decides each step. The agent looks up in an existing
+questions about a portfolio in plain language. A language model (Claude)
+decides each step. The agent looks up in an existing
 enterprise **ESG knowledge graph** which metric measures carbon intensity and
 how it is calculated, has the existing **ESG computation service** compute it
 for each holding, and has a **portfolio service** compute the portfolio's
